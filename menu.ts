@@ -14,7 +14,7 @@ class Menu {
   buttonElement: HTMLElement;
   listElement: HTMLElement;
   itemElements: NodeListOf<HTMLElement>;
-  itemElementsByInitial!: Record<string, HTMLElement[]>;
+  itemElementsByInitial: Record<string, HTMLElement[]> = {};
 
   static hasOpen: Record<string, boolean> = {};
 
