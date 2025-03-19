@@ -15,7 +15,7 @@ class Menu {
   listElement: HTMLElement;
   itemElements: NodeListOf<HTMLElement>;
   itemElementsByInitial: Record<string, HTMLElement[]> = {};
-  animation: Promise<void>;
+  animation: Promise<void> = Promise.resolve();
 
   static hasOpen: Record<string, boolean> = {};
 
