@@ -15,6 +15,7 @@ class Menu {
   listElement: HTMLElement;
   itemElements: NodeListOf<HTMLElement>;
   itemElementsByInitial: Record<string, HTMLElement[]> = {};
+  animation: Promise<void>;
 
   static hasOpen: Record<string, boolean> = {};
 
@@ -36,6 +37,7 @@ class Menu {
     this.itemElements = this.rootElement.querySelectorAll(this.settings.selector.item);
     if (!this.listElement || !this.itemElements.length) return;
     this.itemElementsByInitial = {};
+    this.animation = Promise.resolve();
     if (this.name && this.isFocusable(this.buttonElement)) Menu.hasOpen[this.name] ||= false;
     this.initialize();
   }
@@ -81,7 +83,18 @@ class Menu {
 
   private toggle(isOpen: boolean): void {
     if (this.name) Menu.hasOpen[this.name] = isOpen;
-    this.buttonElement.setAttribute('aria-expanded', String(isOpen));
+    if (isOpen) {
+      this.listElement.style.setProperty('display', 'block');
+      window.requestAnimationFrame(() => this.buttonElement.setAttribute('aria-expanded', 'true'));
+      return;
+    }
+    this.buttonElement.setAttribute('aria-expanded', 'false');
+    this.animation = this.animation.then(async () => {
+      try {
+        await Promise.all(this.listElement.getAnimations().map(animation => animation.finished));
+      } catch (error) {}
+      this.listElement.style.setProperty('display', 'none');
+    });
   }
   private handleOutsidePointerDown(): void {
     if (!this.buttonElement) return;
