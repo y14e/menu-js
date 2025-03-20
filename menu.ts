@@ -94,6 +94,7 @@ class Menu {
       this.listElement.style.setProperty('display', 'none');
     })();
   }
+
   private handleOutsidePointerDown(): void {
     if (!this.buttonElement) return;
     this.close();
