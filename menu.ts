@@ -4,6 +4,9 @@ type MenuOptions = {
     list: string;
     item: string;
   };
+  animation: {
+    duration: number;
+  };
 };
 
 class Menu {
@@ -15,6 +18,7 @@ class Menu {
   listElement: HTMLElement;
   itemElements: NodeListOf<HTMLElement>;
   itemElementsByInitial: Record<string, HTMLElement[]> = {};
+  animation: Animation | null = null;
 
   static hasOpen: Record<string, boolean> = {};
 
@@ -27,15 +31,20 @@ class Menu {
         list: '[role="menu"]',
         item: '[role="menuitem"]',
       },
+      animation: {
+        duration: 300,
+      },
     };
     this.settings = {
       selector: { ...this.defaults.selector, ...options?.selector },
+      animation: { ...this.defaults.animation, ...options?.animation },
     };
     this.buttonElement = this.rootElement.querySelector(this.settings.selector.button) as HTMLElement;
     this.listElement = this.rootElement.querySelector(this.settings.selector.list) as HTMLElement;
     this.itemElements = this.rootElement.querySelectorAll(this.settings.selector.item);
     if (!this.listElement || !this.itemElements.length) return;
     this.itemElementsByInitial = {};
+    this.animation = null;
     if (this.name && this.isFocusable(this.buttonElement)) Menu.hasOpen[this.name] ||= false;
     this.initialize();
   }
@@ -81,7 +90,16 @@ class Menu {
 
   private toggle(isOpen: boolean): void {
     if (this.name) Menu.hasOpen[this.name] = isOpen;
-    this.buttonElement.setAttribute('aria-expanded', String(isOpen));
+    window.requestAnimationFrame(() => this.buttonElement.setAttribute('aria-expanded', String(isOpen)));
+    if (isOpen) this.listElement.style.setProperty('display', 'block');
+    let opacity = window.getComputedStyle(this.listElement).getPropertyValue('opacity');
+    if (this.animation) this.animation.cancel();
+    this.animation = this.listElement.animate({ opacity: isOpen ? [opacity, '1'] : [opacity, '0'] }, { duration: this.settings.animation.duration, easing: 'ease' });
+    this.animation.addEventListener('finish', () => {
+      this.animation = null;
+      if (!isOpen) this.listElement.style.setProperty('display', 'none');
+      this.listElement.style.removeProperty('opacity');
+    });
   }
 
   private handleOutsidePointerDown(): void {
