@@ -91,7 +91,10 @@ class Menu {
   private toggle(isOpen: boolean): void {
     if (this.name) Menu.hasOpen[this.name] = isOpen;
     window.requestAnimationFrame(() => this.buttonElement.setAttribute('aria-expanded', String(isOpen)));
-    if (isOpen) this.listElement.style.setProperty('display', 'block');
+    if (isOpen) {
+      this.listElement.style.setProperty('display', 'block');
+      this.listElement.style.setProperty('opacity', '0');
+    }
     let opacity = window.getComputedStyle(this.listElement).getPropertyValue('opacity');
     if (this.animation) this.animation.cancel();
     this.animation = this.listElement.animate({ opacity: isOpen ? [opacity, '1'] : [opacity, '0'] }, { duration: this.settings.animation.duration, easing: 'ease' });
