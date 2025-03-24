@@ -24,15 +24,19 @@ class Menu {
     if (!this.listElement || !this.itemElements.length) return;
     this.itemElementsByInitial = {};
     this.animation = null;
+    this.handleOutsidePointerDown = this.handleOutsidePointerDown.bind(this);
+    this.handleRootFocusOut = this.handleRootFocusOut.bind(this);
+    this.handleButtonPointerOver = this.handleButtonPointerOver.bind(this);
+    this.handleButtonClick = this.handleButtonClick.bind(this);
+    this.handleButtonKeyDown = this.handleButtonKeyDown.bind(this);
+    this.handleListKeyDown = this.handleListKeyDown.bind(this);
     if (this.name && this.isFocusable(this.buttonElement)) Menu.hasOpen[this.name] ||= false;
     this.initialize();
   }
 
   initialize() {
-    document.addEventListener('pointerdown', event => {
-      if (!this.rootElement.contains(event.target)) this.handleOutsidePointerDown();
-    });
-    this.rootElement.addEventListener('focusout', event => this.handleRootFocusOut(event));
+    document.addEventListener('pointerdown', this.handleOutsidePointerDown);
+    this.rootElement.addEventListener('focusout', this.handleRootFocusOut);
     if (this.buttonElement) {
       let id = Math.random().toString(36).slice(-8);
       this.buttonElement.setAttribute('aria-controls', (this.listElement.id ||= `menu-list-${id}`));
@@ -41,12 +45,12 @@ class Menu {
       this.buttonElement.setAttribute('id', this.buttonElement.getAttribute('id') || `menu-button-${id}`);
       this.buttonElement.setAttribute('tabindex', this.isFocusable(this.buttonElement) ? '0' : '-1');
       if (!this.isFocusable(this.buttonElement)) this.buttonElement.style.setProperty('pointer-events', 'none');
-      this.buttonElement.addEventListener('pointerover', event => this.handleButtonPointerOver(event));
-      this.buttonElement.addEventListener('click', event => this.handleButtonClick(event));
-      this.buttonElement.addEventListener('keydown', event => this.handleButtonKeyDown(event));
+      this.buttonElement.addEventListener('pointerover', this.handleButtonPointerOver);
+      this.buttonElement.addEventListener('click', this.handleButtonClick);
+      this.buttonElement.addEventListener('keydown', this.handleButtonKeyDown);
       this.listElement.setAttribute('aria-labelledby', `${this.listElement.getAttribute('aria-labelledby') || ''} ${this.buttonElement.getAttribute('id')}`.trim());
     }
-    this.listElement.addEventListener('keydown', event => this.handleListKeyDown(event));
+    this.listElement.addEventListener('keydown', this.handleListKeyDown);
     this.itemElements.forEach(item => {
       let initial = item.textContent.trim().charAt(0).toLowerCase();
       if (/[a-z]/.test(initial)) {
@@ -84,8 +88,8 @@ class Menu {
     });
   }
 
-  handleOutsidePointerDown() {
-    if (!this.buttonElement) return;
+  handleOutsidePointerDown(event) {
+    if (!this.rootElement.contains(event.target) || !this.buttonElement) return;
     this.close();
   }
 
