@@ -110,7 +110,7 @@ class Menu {
   }
 
   private handleOutsidePointerDown(event: PointerEvent): void {
-    if (!this.rootElement.contains(event.target as HTMLElement) || !this.buttonElement) return;
+    if (this.rootElement.contains(event.target as HTMLElement) || !this.buttonElement) return;
     this.close();
   }
 
