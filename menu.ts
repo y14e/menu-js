@@ -10,17 +10,17 @@ type MenuOptions = {
 };
 
 class Menu {
-  rootElement: HTMLElement;
-  name?: string;
-  defaults: MenuOptions;
-  settings: MenuOptions;
-  buttonElement: HTMLElement;
-  listElement: HTMLElement;
-  itemElements: NodeListOf<HTMLElement>;
-  itemElementsByInitial: Record<string, HTMLElement[]> = {};
-  animation: Animation | null = null;
+  private rootElement: HTMLElement;
+  private name?: string;
+  private defaults: MenuOptions;
+  private settings: MenuOptions;
+  private buttonElement: HTMLElement;
+  private listElement: HTMLElement;
+  private itemElements: NodeListOf<HTMLElement>;
+  private itemElementsByInitial: Record<string, HTMLElement[]> = {};
+  private animation: Animation | null = null;
 
-  static hasOpen: Record<string, boolean> = {};
+  private static hasOpen: Record<string, boolean> = {};
 
   constructor(root: HTMLElement, options?: Partial<MenuOptions>) {
     this.rootElement = root;
