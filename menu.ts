@@ -137,7 +137,7 @@ class Menu {
     this.toggle(!isOpen);
     let focusables = [...this.itemElements].filter(this.isFocusable);
     if (!focusables.length) return;
-    if (!isOpen) window.requestAnimationFrame(() => window.requestAnimationFrame(() => focusables[0].focus()));
+    if (!isOpen) window.requestAnimationFrame(() => window.requestAnimationFrame(() => focusables[0]!.focus()));
   }
 
   private handleButtonKeyDown(event: KeyboardEvent): void {
@@ -148,7 +148,7 @@ class Menu {
       this.open();
       let focusables = [...this.itemElements].filter(this.isFocusable);
       if (!focusables.length) return;
-      window.requestAnimationFrame(() => window.requestAnimationFrame(() => focusables[key !== 'ArrowUp' ? 0 : focusables.length - 1].focus()));
+      window.requestAnimationFrame(() => window.requestAnimationFrame(() => focusables[key !== 'ArrowUp' ? 0 : focusables.length - 1]!.focus()));
       return;
     }
     this.close();
@@ -186,15 +186,15 @@ class Menu {
           break;
       }
       if (!this.buttonElement) {
-        focusables[currentIndex].setAttribute('tabindex', '-1');
-        focusables[newIndex].setAttribute('tabindex', '0');
+        focusables[currentIndex]!.setAttribute('tabindex', '-1');
+        focusables[newIndex]!.setAttribute('tabindex', '0');
       }
-      focusables[newIndex].focus();
+      focusables[newIndex]!.focus();
       return;
     }
-    let focusablesByInitial = this.itemElementsByInitial[key.toLowerCase()].filter(this.isFocusable);
+    let focusablesByInitial = this.itemElementsByInitial[key.toLowerCase()]!.filter(this.isFocusable);
     let index = focusablesByInitial.findIndex(item => focusables.indexOf(item) > focusables.indexOf(active));
-    focusablesByInitial[index !== -1 ? index : 0].focus();
+    focusablesByInitial[index !== -1 ? index : 0]!.focus();
   }
 
   open(): void {
