@@ -1,4 +1,4 @@
-class Menu {
+export class Menu {
   static hasOpen = {};
 
   constructor(root, options) {
@@ -187,5 +187,3 @@ class Menu {
     if (this.buttonElement && this.rootElement.contains(document.activeElement)) this.buttonElement.focus();
   }
 }
-
-export default Menu;

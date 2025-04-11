@@ -9,7 +9,7 @@ type MenuOptions = {
   };
 };
 
-class Menu {
+export class Menu {
   private rootElement: HTMLElement;
   private name?: string;
   private defaults: MenuOptions;
@@ -208,5 +208,3 @@ class Menu {
     if (this.buttonElement && this.rootElement.contains(document.activeElement)) this.buttonElement.focus();
   }
 }
-
-export default Menu;
