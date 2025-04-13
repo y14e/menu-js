@@ -99,15 +99,7 @@ export class Menu {
       item.removeAttribute('tabindex');
     });
     this.itemElements.forEach(item => {
-      item.setAttribute(
-        'tabindex',
-        this.isFocusable(item) &&
-          [...this.itemElements].filter(this.isFocusable).findIndex(item => {
-            return item.getAttribute('tabindex') === '0';
-          }) === -1
-          ? '0'
-          : '-1',
-      );
+      item.setAttribute('tabindex', this.isFocusable(item) && [...this.itemElements].filter(this.isFocusable).findIndex(item => item.getAttribute('tabindex') === '0') === -1 ? '0' : '-1');
     });
   }
 
