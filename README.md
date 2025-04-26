@@ -1,4 +1,4 @@
-# menu-js
+# menu.js
 WAI-ARIA compliant menu (menu button) pattern implementation in JS.
 ## Installation
 ```js
