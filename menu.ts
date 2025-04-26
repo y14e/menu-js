@@ -240,9 +240,7 @@ export class Menu {
       return;
     }
     const focusablesByInitial = this.itemElementsByInitial[key.toLowerCase()]!.filter(this.isFocusable);
-    const index = focusablesByInitial.findIndex(item => {
-      return focusables.indexOf(item) > focusables.indexOf(active);
-    });
+    const index = focusablesByInitial.findIndex(item => focusables.indexOf(item) > focusables.indexOf(active));
     focusablesByInitial[index !== -1 ? index : 0]!.focus();
   }
 
