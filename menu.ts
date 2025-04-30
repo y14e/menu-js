@@ -136,7 +136,7 @@ export class Menu {
   }
 
   private handleRootFocusOut(event: FocusEvent): void {
-    if (this.buttonElement && this.buttonElement.getAttribute('aria-expanded') !== 'true') {
+    if (!event.relatedTarget || (this.buttonElement && this.buttonElement.getAttribute('aria-expanded') !== 'true')) {
       return;
     }
     if (!this.rootElement.contains(event.relatedTarget as HTMLElement)) {

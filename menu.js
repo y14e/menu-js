@@ -116,7 +116,7 @@ export class Menu {
   }
 
   handleRootFocusOut(event) {
-    if (this.buttonElement && this.buttonElement.getAttribute('aria-expanded') !== 'true') {
+    if (!event.relatedTarget || (this.buttonElement && this.buttonElement.getAttribute('aria-expanded') !== 'true')) {
       return;
     }
     if (!this.rootElement.contains(event.relatedTarget)) {
