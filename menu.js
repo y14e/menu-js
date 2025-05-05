@@ -91,8 +91,10 @@ export class Menu {
       this.buttonElement.setAttribute('aria-expanded', String(isOpen));
     });
     if (isOpen) {
-      this.listElement.style.setProperty('display', 'block');
-      this.listElement.style.setProperty('opacity', '0');
+      Object.assign(this.listElement.style, {
+        display: 'block',
+        opacity: '0',
+      });
     }
     const opacity = window.getComputedStyle(this.listElement).getPropertyValue('opacity');
     if (this.animation) {
