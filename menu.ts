@@ -222,7 +222,7 @@ export class Menu {
     if (['End', 'Home', 'ArrowUp', 'ArrowDown'].includes(key)) {
       const currentIndex = focusables.indexOf(active);
       const length = focusables.length;
-      let newIndex;
+      let newIndex: number;
       switch (key) {
         case 'End':
           newIndex = length - 1;
@@ -238,10 +238,10 @@ export class Menu {
           break;
       }
       if (!this.buttonElement) {
-        focusables[currentIndex]!.setAttribute('tabindex', '-1');
-        focusables[newIndex]!.setAttribute('tabindex', '0');
+        focusables[currentIndex].setAttribute('tabindex', '-1');
+        focusables[newIndex!].setAttribute('tabindex', '0');
       }
-      focusables[newIndex]!.focus();
+      focusables[newIndex!].focus();
       return;
     }
     const focusablesByInitial = this.itemElementsByInitial[key.toLowerCase()]!.filter(this.isFocusable);
