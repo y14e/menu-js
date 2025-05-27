@@ -185,7 +185,7 @@ export class Menu {
     function isAlpha(value) {
       return /^[a-z]$/i.test(value);
     }
-    if (!(['Enter', 'Escape', ' ', 'ArrowUp', 'ArrowDown', 'End', 'Home'].includes(key) || (shiftKey && key === 'Tab') || (isAlpha(key) && this.itemElementsByInitial[key.toLowerCase()]?.filter(this.isFocusable).length))) {
+    if (!(['Enter', 'Escape', ' ', 'End', 'Home', 'ArrowUp', 'ArrowDown'].includes(key) || (shiftKey && key === 'Tab') || (isAlpha(key) && this.itemElementsByInitial[key.toLowerCase()]?.filter(this.isFocusable).length))) {
       return;
     }
     event.preventDefault();
@@ -199,19 +199,22 @@ export class Menu {
       return;
     }
     const focusables = [...this.itemElements].filter(this.isFocusable);
-    if (['ArrowUp', 'ArrowDown', 'End', 'Home'].includes(key)) {
+    if (['End', 'Home', 'ArrowUp', 'ArrowDown'].includes(key)) {
       const currentIndex = focusables.indexOf(active);
       const length = focusables.length;
-      let newIndex = 0;
+      let newIndex;
       switch (key) {
+        case 'End':
+          newIndex = length - 1;
+          break;
+        case 'Home':
+          newIndex = 0;
+          break;
         case 'ArrowUp':
           newIndex = (currentIndex - 1 + length) % length;
           break;
         case 'ArrowDown':
           newIndex = (currentIndex + 1) % length;
-          break;
-        case 'End':
-          newIndex = length - 1;
           break;
       }
       if (!this.buttonElement) {
