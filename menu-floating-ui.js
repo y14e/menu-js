@@ -5,9 +5,6 @@ export class Menu {
 
   constructor(root, options) {
     this.rootElement = root;
-    if (this.rootElement.hasAttribute('data-menu-name')) {
-      this.name = this.rootElement.getAttribute('data-menu-name') || '';
-    }
     this.defaults = {
       selector: {
         button: '[data-menu-button]',
@@ -35,6 +32,12 @@ export class Menu {
     }
     this.itemElementsByInitial = {};
     this.animation = null;
+    if (this.rootElement.hasAttribute('data-menu-name')) {
+      this.name = this.rootElement.getAttribute('data-menu-name') || '';
+    }
+    if (this.name && this.isFocusable(this.buttonElement)) {
+      Menu.hasOpen[this.name] ||= false;
+    }
     this.cleanupFloatingUi = null;
     this.handleOutsidePointerDown = this.handleOutsidePointerDown.bind(this);
     this.handleRootFocusOut = this.handleRootFocusOut.bind(this);
@@ -42,9 +45,6 @@ export class Menu {
     this.handleButtonClick = this.handleButtonClick.bind(this);
     this.handleButtonKeyDown = this.handleButtonKeyDown.bind(this);
     this.handleListKeyDown = this.handleListKeyDown.bind(this);
-    if (this.name && this.isFocusable(this.buttonElement)) {
-      Menu.hasOpen[this.name] ||= false;
-    }
     this.initialize();
   }
 

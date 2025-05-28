@@ -16,9 +16,7 @@ type MenuOptions = {
 };
 
 export class Menu {
-  private static hasOpen: Record<string, boolean> = {};
   private rootElement: HTMLElement;
-  private name?: string;
   private defaults: MenuOptions;
   private settings: MenuOptions;
   private buttonElement: HTMLElement;
@@ -26,13 +24,12 @@ export class Menu {
   private itemElements: NodeListOf<HTMLElement>;
   private itemElementsByInitial: Record<string, HTMLElement[]> = {};
   private animation: Animation | null = null;
+  private name?: string;
+  private static hasOpen: Record<string, boolean> = {};
   private cleanupFloatingUi: Function | null = null;
 
   constructor(root: HTMLElement, options?: Partial<MenuOptions>) {
     this.rootElement = root;
-    if (this.rootElement.hasAttribute('data-menu-name')) {
-      this.name = this.rootElement.getAttribute('data-menu-name') || '';
-    }
     this.defaults = {
       selector: {
         button: '[data-menu-button]',
@@ -60,6 +57,12 @@ export class Menu {
     }
     this.itemElementsByInitial = {};
     this.animation = null;
+    if (this.rootElement.hasAttribute('data-menu-name')) {
+      this.name = this.rootElement.getAttribute('data-menu-name') || '';
+    }
+    if (this.name && this.isFocusable(this.buttonElement)) {
+      Menu.hasOpen[this.name] ||= false;
+    }
     this.cleanupFloatingUi = null;
     this.handleOutsidePointerDown = this.handleOutsidePointerDown.bind(this);
     this.handleRootFocusOut = this.handleRootFocusOut.bind(this);
@@ -67,9 +70,6 @@ export class Menu {
     this.handleButtonClick = this.handleButtonClick.bind(this);
     this.handleButtonKeyDown = this.handleButtonKeyDown.bind(this);
     this.handleListKeyDown = this.handleListKeyDown.bind(this);
-    if (this.name && this.isFocusable(this.buttonElement)) {
-      Menu.hasOpen[this.name] ||= false;
-    }
     this.initialize();
   }
 
