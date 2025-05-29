@@ -1,5 +1,5 @@
 # menu.js
-WAI-ARIA compliant menu (menu button) pattern implementation in JS.
+WAI-ARIA compliant menu (menu button) pattern implementation in JS. Supports infinitely nested menus.
 ## Installation
 ```js
 import { Menu } from './menu.js';
