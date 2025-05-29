@@ -63,6 +63,7 @@ export class Menu {
     this.handleItemPointerOver = this.handleItemPointerOver.bind(this);
     this.handleSubMenuPointerOver = this.handleSubMenuPointerOver.bind(this);
     this.handleSubMenuPointerLeave = this.handleSubMenuPointerLeave.bind(this);
+    this.handleSubMenuClick = this.handleSubMenuClick.bind(this);
     this.initialize();
   }
 
@@ -107,6 +108,7 @@ export class Menu {
       }
       root.addEventListener('pointerover', this.handleSubMenuPointerOver);
       root.addEventListener('pointerleave', this.handleSubMenuPointerLeave);
+      root.addEventListener('click', this.handleSubMenuClick);
     });
     if (!this.isSubMenu) {
       this.rootElement.setAttribute('data-menu-initialized', '');
@@ -332,6 +334,20 @@ export class Menu {
         menu.close();
       });
     }, this.settings.subMenuDelay);
+  }
+
+  handleSubMenuClick(event) {
+    const target = event.currentTarget;
+    if (!target.contains(event.target)) {
+      return;
+    }
+    this.subMenus.forEach(menu => {
+      if (menu.rootElement === target) {
+        menu.open();
+      } else {
+        menu.close();
+      }
+    });
   }
 
   open() {
