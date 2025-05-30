@@ -82,7 +82,7 @@ export class Menu {
     }
     this.isSubMenu = isSubMenu;
     this.buttonElement = this.rootElement.querySelector(this.settings.selector[!this.isSubMenu ? 'button' : 'item']) as HTMLElement;
-    this.listElement = this.rootElement.querySelector(`${this.settings.selector.list}`) as HTMLElement;
+    this.listElement = this.rootElement.querySelector(this.settings.selector.list) as HTMLElement;
     this.itemElements = this.rootElement.querySelectorAll(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} ${this.settings.selector.list} *):not(:scope > *)`);
     if (!this.listElement || !this.itemElements.length) {
       return;
