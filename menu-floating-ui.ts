@@ -10,14 +10,13 @@ type MenuOptions = {
     duration: number;
   };
   subMenuDelay: number;
-  floatingUi: {
-    middleware: Middleware[];
-    placement: Placement;
-  };
-  subMenuFloatingUi: {
-    middleware: Middleware[];
-    placement: Placement;
-  };
+  floatingUi: Partial<MenuFloatingUiOptions>;
+  subMenuFloatingUi: Partial<MenuFloatingUiOptions>;
+};
+
+type MenuFloatingUiOptions = {
+  middleware: Middleware[];
+  placement: Placement;
 };
 
 export class Menu {
