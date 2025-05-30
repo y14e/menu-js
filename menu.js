@@ -2,7 +2,7 @@ export class Menu {
   static menus = [];
   static hasOpen = {};
 
-  constructor(root, options, isSubMenu = false) {
+  constructor(root, options, isSubmenu = false) {
     this.rootElement = root;
     this.defaults = {
       selector: {
@@ -30,10 +30,13 @@ export class Menu {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       this.settings.animation.duration = 0;
     }
-    this.isSubMenu = isSubMenu;
-    this.buttonElement = this.rootElement.querySelector(this.settings.selector[!this.isSubMenu ? 'button' : 'item']);
+    this.isSubmenu = isSubmenu;
+    this.buttonElement = this.rootElement.querySelector(this.settings.selector[!this.isSubmenu ? 'button' : 'item']);
     this.listElement = this.rootElement.querySelector(this.settings.selector.list);
-    this.itemElements = this.rootElement.querySelectorAll(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} ${this.settings.selector.list} *):not(:scope > *)`);
+    this.itemElements = this.rootElement.querySelectorAll(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} ${this.settings.selector.list} *)`);
+    if (this.isSubmenu) {
+      this.itemElements = [...this.itemElements].splice(1);
+    }
     if (!this.listElement || !this.itemElements.length) {
       return;
     }
@@ -42,9 +45,9 @@ export class Menu {
     if (this.rootElement.hasAttribute('data-menu-name')) {
       this.name = this.rootElement.getAttribute('data-menu-name') || '';
     }
-    this.subMenus = [];
-    this.subMenuTimer = 0;
-    if (!this.isSubMenu) {
+    this.submenus = [];
+    this.submenuTimer = 0;
+    if (!this.isSubmenu) {
       Menu.menus.push(this);
     }
     if (this.name && this.isFocusable(this.buttonElement)) {
@@ -57,9 +60,9 @@ export class Menu {
     this.handleButtonKeyDown = this.handleButtonKeyDown.bind(this);
     this.handleListKeyDown = this.handleListKeyDown.bind(this);
     this.handleItemPointerOver = this.handleItemPointerOver.bind(this);
-    this.handleSubMenuPointerOver = this.handleSubMenuPointerOver.bind(this);
-    this.handleSubMenuPointerLeave = this.handleSubMenuPointerLeave.bind(this);
-    this.handleSubMenuClick = this.handleSubMenuClick.bind(this);
+    this.handleSubmenuPointerOver = this.handleSubmenuPointerOver.bind(this);
+    this.handleSubmenuPointerLeave = this.handleSubmenuPointerLeave.bind(this);
+    this.handleSubmenuClick = this.handleSubmenuClick.bind(this);
     this.initialize();
   }
 
@@ -72,7 +75,7 @@ export class Menu {
       this.buttonElement.setAttribute('aria-expanded', 'false');
       this.buttonElement.setAttribute('aria-haspopup', 'menu');
       this.buttonElement.setAttribute('id', this.buttonElement.getAttribute('id') || `menu-button-${id}`);
-      this.buttonElement.setAttribute('tabindex', this.isFocusable(this.buttonElement) && !this.isSubMenu ? '0' : '-1');
+      this.buttonElement.setAttribute('tabindex', this.isFocusable(this.buttonElement) && !this.isSubmenu ? '0' : '-1');
       if (!this.isFocusable(this.buttonElement)) {
         this.buttonElement.style.setProperty('pointer-events', 'none');
       }
@@ -92,21 +95,20 @@ export class Menu {
     });
     this.resetTabIndex();
     this.itemElements.forEach(item => {
-      const list = item.nextElementSibling;
-      if (!list) {
+      const root = item.parentElement;
+      if (!root.querySelector(this.settings.selector.list)) {
         return;
       }
-      const root = list.parentElement;
       const menu = new Menu(root, this.settings, true);
-      this.subMenus.push(menu);
+      this.submenus.push(menu);
       if (!this.isFocusable(menu.buttonElement)) {
         return;
       }
-      root.addEventListener('pointerover', this.handleSubMenuPointerOver);
-      root.addEventListener('pointerleave', this.handleSubMenuPointerLeave);
-      root.addEventListener('click', this.handleSubMenuClick);
+      root.addEventListener('pointerover', this.handleSubmenuPointerOver);
+      root.addEventListener('pointerleave', this.handleSubmenuPointerLeave);
+      root.addEventListener('click', this.handleSubmenuClick);
     });
-    if (!this.isSubMenu) {
+    if (!this.isSubmenu) {
       this.rootElement.setAttribute('data-menu-initialized', '');
     }
   }
@@ -190,7 +192,7 @@ export class Menu {
   handleButtonClick(event) {
     event.preventDefault();
     const isOpen = this.buttonElement.getAttribute('aria-expanded') === 'true';
-    if (!this.isSubMenu || event.pointerType !== 'mouse') {
+    if (!this.isSubmenu || event.pointerType !== 'mouse') {
       this.toggle(!isOpen);
     }
     const focusables = [...this.itemElements].filter(this.isFocusable);
@@ -208,13 +210,13 @@ export class Menu {
 
   handleButtonKeyDown(event) {
     const { key } = event;
-    const keys = ['Enter', 'Escape', ' ', 'ArrowUp', ...(this.isSubMenu ? ['ArrowRight'] : []), 'ArrowDown'];
+    const keys = ['Enter', 'Escape', ' ', 'ArrowUp', ...(this.isSubmenu ? ['ArrowRight'] : []), 'ArrowDown'];
     if (!keys.includes(key)) {
       return;
     }
     event.preventDefault();
     if (!['Escape'].includes(key)) {
-      if (this.isSubMenu && key !== 'ArrowRight') {
+      if (this.isSubmenu && key !== 'ArrowRight') {
         return;
       }
       this.open();
@@ -237,7 +239,7 @@ export class Menu {
     if (!this.buttonElement && shiftKey && key === 'Tab') {
       return;
     }
-    const keys = ['Enter', 'Escape', ' ', 'End', 'Home', ...(this.isSubMenu ? ['ArrowLeft'] : []), 'ArrowUp', 'ArrowDown'];
+    const keys = ['Enter', 'Escape', ' ', 'End', 'Home', ...(this.isSubmenu ? ['ArrowLeft'] : []), 'ArrowUp', 'ArrowDown'];
     function isAlpha(value) {
       return /^[a-z]$/i.test(value);
     }
@@ -251,7 +253,7 @@ export class Menu {
       active.click();
       return;
     }
-    if (['Tab', 'Escape'].includes(key) || (this.isSubMenu && key === 'ArrowLeft')) {
+    if (['Tab', 'Escape'].includes(key) || (this.isSubmenu && key === 'ArrowLeft')) {
       this.close();
       return;
     }
@@ -292,11 +294,11 @@ export class Menu {
     }
   }
 
-  handleSubMenuPointerOver(event) {
-    window.clearTimeout(this.subMenuTimer);
+  handleSubmenuPointerOver(event) {
+    window.clearTimeout(this.submenuTimer);
     const target = event.currentTarget;
-    this.subMenuTimer = window.setTimeout(() => {
-      this.subMenus.forEach(menu => {
+    this.submenuTimer = window.setTimeout(() => {
+      this.submenus.forEach(menu => {
         if (menu.rootElement === target) {
           menu.open();
         } else {
@@ -306,24 +308,24 @@ export class Menu {
     }, this.settings.delay);
   }
 
-  handleSubMenuPointerLeave(event) {
-    window.clearTimeout(this.subMenuTimer);
+  handleSubmenuPointerLeave(event) {
+    window.clearTimeout(this.submenuTimer);
     if (!this.rootElement.contains(event.relatedTarget)) {
       return;
     }
-    this.subMenuTimer = window.setTimeout(() => {
-      this.subMenus.forEach(subMenu => {
-        subMenu.close();
+    this.submenuTimer = window.setTimeout(() => {
+      this.submenus.forEach(submenu => {
+        submenu.close();
       });
     }, this.settings.delay);
   }
 
-  handleSubMenuClick(event) {
-    this.subMenus.forEach(subMenu => {
-      if (subMenu.rootElement === event.currentTarget) {
-        subMenu.open();
+  handleSubmenuClick(event) {
+    this.submenus.forEach(submenu => {
+      if (submenu.rootElement === event.currentTarget) {
+        submenu.open();
       } else {
-        subMenu.close();
+        submenu.close();
       }
     });
   }
@@ -345,7 +347,7 @@ export class Menu {
       return;
     }
     this.toggle(false);
-    this.subMenus.forEach(menu => {
+    this.submenus.forEach(menu => {
       menu.close();
     });
     if (this.buttonElement && this.rootElement.contains(document.activeElement)) {
