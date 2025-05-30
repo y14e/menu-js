@@ -45,6 +45,9 @@ export class Menu {
       selector: { ...this.defaults.selector, ...options?.selector },
       animation: { ...this.defaults.animation, ...options?.animation },
     };
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      this.settings.animation.duration = 0;
+    }
     this.isSubMenu = isSubMenu;
     this.buttonElement = this.rootElement.querySelector(this.settings.selector[!this.isSubMenu ? 'button' : 'item']) as HTMLElement;
     this.listElement = this.rootElement.querySelector(`${this.settings.selector.list}`) as HTMLElement;
