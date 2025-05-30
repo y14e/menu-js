@@ -13,7 +13,7 @@ export class Menu {
       animation: {
         duration: 300,
       },
-      subMenuDelay: 300,
+      delay: 300,
     };
     this.settings = {
       ...this.defaults,
@@ -303,7 +303,7 @@ export class Menu {
           menu.close();
         }
       });
-    }, this.settings.subMenuDelay);
+    }, this.settings.delay);
   }
 
   handleSubMenuPointerLeave(event) {
@@ -312,22 +312,18 @@ export class Menu {
       return;
     }
     this.subMenuTimer = window.setTimeout(() => {
-      this.subMenus.forEach(menu => {
-        menu.close();
+      this.subMenus.forEach(subMenu => {
+        subMenu.close();
       });
-    }, this.settings.subMenuDelay);
+    }, this.settings.delay);
   }
 
   handleSubMenuClick(event) {
-    const target = event.currentTarget;
-    if (!target.contains(event.target)) {
-      return;
-    }
-    this.subMenus.forEach(menu => {
-      if (menu.rootElement === target) {
-        menu.open();
+    this.subMenus.forEach(subMenu => {
+      if (subMenu.rootElement === event.currentTarget) {
+        subMenu.open();
       } else {
-        menu.close();
+        subMenu.close();
       }
     });
   }
@@ -349,8 +345,8 @@ export class Menu {
       return;
     }
     this.toggle(false);
-    this.subMenus.forEach(subMenu => {
-      subMenu.close();
+    this.subMenus.forEach(menu => {
+      menu.close();
     });
     if (this.buttonElement && this.rootElement.contains(document.activeElement)) {
       this.buttonElement.focus();

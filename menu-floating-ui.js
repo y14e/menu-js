@@ -15,7 +15,7 @@ export class Menu {
       animation: {
         duration: 300,
       },
-      subMenuDelay: 300,
+      delay: 300,
       floatingUi: {
         middleware: [flip(), offset(0), shift()],
         placement: 'bottom-start',
@@ -344,7 +344,7 @@ export class Menu {
           menu.close();
         }
       });
-    }, this.settings.subMenuDelay);
+    }, this.settings.delay);
   }
 
   handleSubMenuPointerLeave(event) {
@@ -356,16 +356,12 @@ export class Menu {
       this.subMenus.forEach(menu => {
         menu.close();
       });
-    }, this.settings.subMenuDelay);
+    }, this.settings.delay);
   }
 
   handleSubMenuClick(event) {
-    const target = event.currentTarget;
-    if (!target.contains(event.target)) {
-      return;
-    }
     this.subMenus.forEach(menu => {
-      if (menu.rootElement === target) {
+      if (menu.rootElement === event.currentTarget) {
         menu.open();
       } else {
         menu.close();
@@ -390,8 +386,8 @@ export class Menu {
       return;
     }
     this.toggle(false);
-    this.subMenus.forEach(subMenu => {
-      subMenu.close();
+    this.subMenus.forEach(menu => {
+      menu.close();
     });
     if (this.buttonElement && this.rootElement.contains(document.activeElement)) {
       this.buttonElement.focus();

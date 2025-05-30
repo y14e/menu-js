@@ -9,7 +9,7 @@ type MenuOptions = {
   animation: {
     duration: number;
   };
-  subMenuDelay: number;
+  delay: number;
   floatingUi: Partial<MenuFloatingUiOptions>;
   subMenuFloatingUi: Partial<MenuFloatingUiOptions>;
 };
@@ -47,7 +47,7 @@ export class Menu {
       animation: {
         duration: 300,
       },
-      subMenuDelay: 300,
+      delay: 300,
       floatingUi: {
         middleware: [flip(), offset(0), shift()],
         placement: 'bottom-start',
@@ -376,7 +376,7 @@ export class Menu {
           menu.close();
         }
       });
-    }, this.settings.subMenuDelay);
+    }, this.settings.delay);
   }
 
   private handleSubMenuPointerLeave(event: PointerEvent): void {
@@ -388,16 +388,12 @@ export class Menu {
       this.subMenus.forEach(menu => {
         menu.close();
       });
-    }, this.settings.subMenuDelay);
+    }, this.settings.delay);
   }
 
   private handleSubMenuClick(event: MouseEvent): void {
-    const target = event.currentTarget as HTMLElement;
-    if (!target.contains(event.target as HTMLElement)) {
-      return;
-    }
     this.subMenus.forEach(menu => {
-      if (menu.rootElement === target) {
+      if (menu.rootElement === (event.currentTarget as HTMLElement)) {
         menu.open();
       } else {
         menu.close();
@@ -422,8 +418,8 @@ export class Menu {
       return;
     }
     this.toggle(false);
-    this.subMenus.forEach(subMenu => {
-      subMenu.close();
+    this.subMenus.forEach(menu => {
+      menu.close();
     });
     if (this.buttonElement && this.rootElement.contains(document.activeElement)) {
       this.buttonElement.focus();
