@@ -28,10 +28,22 @@ export class Menu {
     this.settings = {
       ...this.defaults,
       ...options,
-      selector: { ...this.defaults.selector, ...options?.selector },
-      animation: { ...this.defaults.animation, ...options?.animation },
-      floatingUi: { ...this.defaults.floatingUi, ...options?.floatingUi },
-      subMenuFloatingUi: { ...this.defaults.subMenuFloatingUi, ...options?.subMenuFloatingUi },
+      selector: {
+        ...this.defaults.selector,
+        ...options?.selector,
+      },
+      animation: {
+        ...this.defaults.animation,
+        ...options?.animation,
+      },
+      floatingUi: {
+        ...this.defaults.floatingUi,
+        ...options?.floatingUi,
+      },
+      subMenuFloatingUi: {
+        ...this.defaults.subMenuFloatingUi,
+        ...options?.subMenuFloatingUi,
+      },
     };
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       this.settings.animation.duration = 0;
@@ -168,7 +180,15 @@ export class Menu {
     if (this.animation) {
       this.animation.cancel();
     }
-    this.animation = this.listElement.animate({ opacity: isOpen ? [opacity, '1'] : [opacity, '0'] }, { duration: this.settings.animation.duration, easing: 'ease' });
+    this.animation = this.listElement.animate(
+      {
+        opacity: isOpen ? [opacity, '1'] : [opacity, '0'],
+      },
+      {
+        duration: this.settings.animation.duration,
+        easing: 'ease',
+      },
+    );
     this.animation.addEventListener('finish', () => {
       this.animation = null;
       if (!isOpen) {
