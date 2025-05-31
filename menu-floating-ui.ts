@@ -42,7 +42,7 @@ export class Menu {
       selector: {
         button: '[data-menu-button]',
         list: '[role="menu"]',
-        item: '[role="menuitem"]',
+        item: '[role^="menuitem"]',
       },
       animation: {
         duration: 300,
