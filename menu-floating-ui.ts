@@ -25,7 +25,7 @@ export class Menu {
   private settings: MenuOptions;
   private buttonElement: HTMLElement;
   private listElement: HTMLElement;
-  private itemElements: NodeListOf<HTMLElement>;
+  private itemElements: HTMLElement[];
   private itemElementsByInitial: Record<string, HTMLElement[]> = {};
   private animation: Animation | null = null;
   private name?: string;
@@ -83,9 +83,9 @@ export class Menu {
     this.isSubmenu = isSubmenu;
     this.buttonElement = this.rootElement.querySelector(this.settings.selector[!this.isSubmenu ? 'button' : 'item']) as HTMLElement;
     this.listElement = this.rootElement.querySelector(this.settings.selector.list) as HTMLElement;
-    this.itemElements = this.rootElement.querySelectorAll(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} ${this.settings.selector.list} *)`);
+    this.itemElements = [...this.rootElement.querySelectorAll(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} ${this.settings.selector.list} *)`)] as HTMLElement[];
     if (this.isSubmenu) {
-      this.itemElements = [...this.itemElements].splice(1) as unknown as NodeListOf<HTMLElement>;
+      this.itemElements.shift();
     }
     if (!this.listElement || !this.itemElements.length) {
       return;

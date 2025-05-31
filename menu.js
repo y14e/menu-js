@@ -33,9 +33,9 @@ export class Menu {
     this.isSubmenu = isSubmenu;
     this.buttonElement = this.rootElement.querySelector(this.settings.selector[!this.isSubmenu ? 'button' : 'item']);
     this.listElement = this.rootElement.querySelector(this.settings.selector.list);
-    this.itemElements = this.rootElement.querySelectorAll(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} ${this.settings.selector.list} *)`);
+    this.itemElements = [...this.rootElement.querySelectorAll(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} ${this.settings.selector.list} *)`)];
     if (this.isSubmenu) {
-      this.itemElements = [...this.itemElements].splice(1);
+      this.itemElements.shift();
     }
     if (!this.listElement || !this.itemElements.length) {
       return;
@@ -122,7 +122,7 @@ export class Menu {
       item.removeAttribute('tabindex');
     });
     this.itemElements.forEach(item => {
-      item.setAttribute('tabindex', this.isFocusable(item) && [...this.itemElements].filter(this.isFocusable).findIndex(item => item.getAttribute('tabindex') === '0') === -1 ? '0' : '-1');
+      item.setAttribute('tabindex', this.isFocusable(item) && this.itemElements.filter(this.isFocusable).findIndex(item => item.getAttribute('tabindex') === '0') === -1 ? '0' : '-1');
     });
   }
 
@@ -195,7 +195,7 @@ export class Menu {
     if (!this.isSubmenu || event.pointerType !== 'mouse') {
       this.toggle(!isOpen);
     }
-    const focusables = [...this.itemElements].filter(this.isFocusable);
+    const focusables = this.itemElements.filter(this.isFocusable);
     if (!focusables.length) {
       return;
     }
@@ -220,7 +220,7 @@ export class Menu {
         return;
       }
       this.open();
-      const focusables = [...this.itemElements].filter(this.isFocusable);
+      const focusables = this.itemElements.filter(this.isFocusable);
       if (!focusables.length) {
         return;
       }
@@ -257,7 +257,7 @@ export class Menu {
       this.close();
       return;
     }
-    const focusables = [...this.itemElements].filter(this.isFocusable);
+    const focusables = this.itemElements.filter(this.isFocusable);
     if (['End', 'Home', 'ArrowUp', 'ArrowDown'].includes(key)) {
       const currentIndex = focusables.indexOf(active);
       const length = focusables.length;
