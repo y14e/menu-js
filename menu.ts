@@ -65,11 +65,25 @@ export class Menu {
       return;
     }
     this.itemElementsByInitial = {};
+    this.itemElements.forEach(item => {
+      const initial = item.textContent!.trim().charAt(0).toLowerCase();
+      if (/[a-z]/.test(initial)) {
+        item.setAttribute('aria-keyshortcuts', initial);
+        (this.itemElementsByInitial[initial] ||= []).push(item);
+      }
+    });
     this.animation = null;
     if (this.rootElement.hasAttribute('data-menu-name')) {
       this.name = this.rootElement.getAttribute('data-menu-name') || '';
     }
     this.submenus = [];
+    this.itemElements.forEach(item => {
+      const root = item.parentElement as HTMLElement;
+      if (!root.querySelector(this.settings.selector.list)) {
+        return;
+      }
+      this.submenus.push(new Menu(root, this.settings, true));
+    });
     this.submenuTimer = 0;
     if (!this.isSubmenu) {
       Menu.menus.push(this);
@@ -110,26 +124,15 @@ export class Menu {
     }
     this.listElement.addEventListener('keydown', this.handleListKeyDown);
     this.itemElements.forEach(item => {
-      const initial = item.textContent!.trim().charAt(0).toLowerCase();
-      if (/[a-z]/.test(initial)) {
-        item.setAttribute('aria-keyshortcuts', initial);
-        (this.itemElementsByInitial[initial] ||= []).push(item);
-      }
       item.addEventListener('pointerover', this.handleItemPointerOver);
     });
-    this.itemElements.forEach(item => {
-      const root = item.parentElement as HTMLElement;
-      if (!root.querySelector(this.settings.selector.list)) {
-        return;
-      }
-      const menu = new Menu(root, this.settings, true);
-      this.submenus.push(menu);
+    this.submenus.forEach(menu => {
       if (!this.isFocusable(menu.buttonElement)) {
         return;
       }
-      root.addEventListener('pointerover', this.handleSubmenuPointerOver);
-      root.addEventListener('pointerleave', this.handleSubmenuPointerLeave);
-      root.addEventListener('click', this.handleSubmenuClick);
+      menu.rootElement.addEventListener('pointerover', this.handleSubmenuPointerOver);
+      menu.rootElement.addEventListener('pointerleave', this.handleSubmenuPointerLeave);
+      menu.rootElement.addEventListener('click', this.handleSubmenuClick);
     });
     this.resetTabIndex();
     if (!this.isSubmenu) {
