@@ -27,6 +27,9 @@ export class Menu {
   private listElement: HTMLElement;
   private itemElements: HTMLElement[];
   private itemElementsByInitial: Record<string, HTMLElement[]> = {};
+  private checkboxItemElements: HTMLElement[] = [];
+  private radioItemElements: HTMLElement[] = [];
+  private radioItemElementsByGroup: Map<HTMLElement, HTMLElement[]> = new Map();
   private animation: Animation | null = null;
   private name?: string;
   private isSubmenu: boolean;
@@ -95,6 +98,18 @@ export class Menu {
         (this.itemElementsByInitial[initial] ||= []).push(item);
       }
     });
+    this.checkboxItemElements = this.itemElements.filter(item => item.getAttribute('role') === 'menuitemcheckbox');
+    this.radioItemElements = this.itemElements.filter(item => item.getAttribute('role') === 'menuitemradio');
+    this.radioItemElementsByGroup = new Map();
+    if (this.radioItemElements.length) {
+      this.radioItemElements.forEach(item => {
+        let group = item.closest('[role="group"]') as HTMLElement;
+        if (!group || !this.rootElement.contains(group)) {
+          group = this.rootElement;
+        }
+        (this.radioItemElementsByGroup.get(group) ?? this.radioItemElementsByGroup.set(group, []).get(group))!.push(item);
+      });
+    }
     this.animation = null;
     if (this.rootElement.hasAttribute('data-menu-name')) {
       this.name = this.rootElement.getAttribute('data-menu-name') || '';
@@ -122,6 +137,8 @@ export class Menu {
     this.handleButtonKeyDown = this.handleButtonKeyDown.bind(this);
     this.handleListKeyDown = this.handleListKeyDown.bind(this);
     this.handleItemPointerOver = this.handleItemPointerOver.bind(this);
+    this.handleCheckboxItemClick = this.handleCheckboxItemClick.bind(this);
+    this.handleRadioItemClick = this.handleRadioItemClick.bind(this);
     this.handleSubmenuPointerOver = this.handleSubmenuPointerOver.bind(this);
     this.handleSubmenuPointerLeave = this.handleSubmenuPointerLeave.bind(this);
     this.handleSubmenuClick = this.handleSubmenuClick.bind(this);
@@ -150,14 +167,26 @@ export class Menu {
     this.itemElements.forEach(item => {
       item.addEventListener('pointerover', this.handleItemPointerOver);
     });
-    this.submenus.forEach(menu => {
-      if (!this.isFocusable(menu.buttonElement)) {
-        return;
-      }
-      menu.rootElement.addEventListener('pointerover', this.handleSubmenuPointerOver);
-      menu.rootElement.addEventListener('pointerleave', this.handleSubmenuPointerLeave);
-      menu.rootElement.addEventListener('click', this.handleSubmenuClick);
-    });
+    if (this.checkboxItemElements.length) {
+      this.checkboxItemElements.forEach(item => {
+        item.addEventListener('click', this.handleCheckboxItemClick);
+      });
+    }
+    if (this.radioItemElements.length) {
+      this.radioItemElements.forEach(item => {
+        item.addEventListener('click', this.handleRadioItemClick);
+      });
+    }
+    if (this.submenus.length) {
+      this.submenus.forEach(menu => {
+        if (!this.isFocusable(menu.buttonElement)) {
+          return;
+        }
+        menu.rootElement.addEventListener('pointerover', this.handleSubmenuPointerOver);
+        menu.rootElement.addEventListener('pointerleave', this.handleSubmenuPointerLeave);
+        menu.rootElement.addEventListener('click', this.handleSubmenuClick);
+      });
+    }
     this.resetTabIndex();
     if (!this.isSubmenu) {
       this.rootElement.setAttribute('data-menu-initialized', '');
@@ -365,6 +394,18 @@ export class Menu {
     if (this.rootElement.querySelector(':focus-visible')) {
       (event.currentTarget as HTMLElement).focus();
     }
+  }
+
+  private handleCheckboxItemClick(event: MouseEvent): void {
+    const item = event.currentTarget as HTMLElement;
+    item.setAttribute('aria-checked', String(item.getAttribute('aria-checked') !== 'true'));
+  }
+
+  private handleRadioItemClick(event: MouseEvent): void {
+    const target = event.currentTarget as HTMLElement;
+    this.radioItemElementsByGroup.get(target.closest('[role="group"]') || this.rootElement)!.forEach(item => {
+      item.setAttribute('aria-checked', String(item === target));
+    });
   }
 
   private handleSubmenuPointerOver(event: PointerEvent): void {
