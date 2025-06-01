@@ -422,13 +422,15 @@ export class Menu {
   }
 
   close() {
+    if (this.submenus.length) {
+      this.submenus.forEach(menu => {
+        menu.close();
+      });
+    }
     if (!this.buttonElement || this.buttonElement.getAttribute('aria-expanded') !== 'true') {
       return;
     }
     this.toggle(false);
-    this.submenus.forEach(menu => {
-      menu.close();
-    });
     if (this.buttonElement && this.rootElement.contains(document.activeElement)) {
       this.buttonElement.focus();
     }
