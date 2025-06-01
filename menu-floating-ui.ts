@@ -26,18 +26,18 @@ export class Menu {
   private buttonElement: HTMLElement;
   private listElement: HTMLElement;
   private itemElements: HTMLElement[];
-  private itemElementsByInitial: Record<string, HTMLElement[]> = {};
-  private checkboxItemElements: HTMLElement[] = [];
-  private radioItemElements: HTMLElement[] = [];
-  private radioItemElementsByGroup: Map<HTMLElement, HTMLElement[]> = new Map();
-  private animation: Animation | null = null;
+  private itemElementsByInitial!: Record<string, HTMLElement[]>;
+  private checkboxItemElements!: HTMLElement[];
+  private radioItemElements!: HTMLElement[];
+  private radioItemElementsByGroup!: Map<HTMLElement, HTMLElement[]>;
+  private animation!: Animation | null;
   private name?: string;
   private isSubmenu: boolean;
   private submenus: Menu[] = [];
-  private submenuTimer: number = 0;
-  private static menus: Menu[] = [];
-  private static hasOpen: Record<string, boolean> = {};
-  private cleanupFloatingUi: Function | null = null;
+  private submenuTimer!: number;
+  private static menus: Menu[];
+  private static hasOpen: Record<string, boolean>;
+  private cleanupFloatingUi!: Function | null;
 
   constructor(root: HTMLElement, options?: Partial<MenuOptions>, isSubmenu = false) {
     this.rootElement = root;
