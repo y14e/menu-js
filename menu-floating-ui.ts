@@ -35,8 +35,8 @@ export class Menu {
   private isSubmenu: boolean;
   private submenus: Menu[] = [];
   private submenuTimer!: number;
-  private static menus: Menu[];
-  private static hasOpen: Record<string, boolean>;
+  private static menus: Menu[] = [];
+  private static hasOpen: Record<string, boolean> = {};
   private cleanupFloatingUi!: Function | null;
 
   constructor(root: HTMLElement, options?: Partial<MenuOptions>, isSubmenu = false) {
