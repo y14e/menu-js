@@ -458,6 +458,7 @@ export class Menu {
 
   close(): void {
     if (this.submenus.length) {
+      window.clearTimeout(this.submenuTimer);
       this.submenus.forEach(menu => {
         menu.close();
       });
