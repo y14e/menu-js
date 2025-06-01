@@ -33,10 +33,7 @@ export class Menu {
     this.isSubmenu = isSubmenu;
     this.buttonElement = this.rootElement.querySelector(this.settings.selector[!this.isSubmenu ? 'button' : 'item']);
     this.listElement = this.rootElement.querySelector(this.settings.selector.list);
-    this.itemElements = [...this.rootElement.querySelectorAll(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} ${this.settings.selector.list} *)`)];
-    if (this.isSubmenu) {
-      this.itemElements.shift();
-    }
+    this.itemElements = [...this.listElement.querySelectorAll(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} *)`)];
     if (!this.listElement || !this.itemElements.length) {
       return;
     }

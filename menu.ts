@@ -57,10 +57,7 @@ export class Menu {
     this.isSubmenu = isSubmenu;
     this.buttonElement = this.rootElement.querySelector(this.settings.selector[!this.isSubmenu ? 'button' : 'item']) as HTMLElement;
     this.listElement = this.rootElement.querySelector(this.settings.selector.list) as HTMLElement;
-    this.itemElements = [...this.rootElement.querySelectorAll(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} ${this.settings.selector.list} *)`)].slice(this.isSubmenu ? 1 : 0) as HTMLElement[];
-    if (this.isSubmenu) {
-      this.itemElements.shift();
-    }
+    this.itemElements = [...this.listElement.querySelectorAll(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} *)`)] as HTMLElement[];
     if (!this.listElement || !this.itemElements.length) {
       return;
     }
