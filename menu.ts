@@ -117,7 +117,6 @@ export class Menu {
       }
       item.addEventListener('pointerover', this.handleItemPointerOver);
     });
-    this.resetTabIndex();
     this.itemElements.forEach(item => {
       const root = item.parentElement as HTMLElement;
       if (!root.querySelector(this.settings.selector.list)) {
@@ -132,6 +131,7 @@ export class Menu {
       root.addEventListener('pointerleave', this.handleSubmenuPointerLeave);
       root.addEventListener('click', this.handleSubmenuClick);
     });
+    this.resetTabIndex();
     if (!this.isSubmenu) {
       this.rootElement.setAttribute('data-menu-initialized', '');
     }
