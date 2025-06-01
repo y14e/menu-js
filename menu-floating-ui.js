@@ -171,21 +171,6 @@ export class Menu {
     });
   }
 
-  updateFloatingUi() {
-    const compute = () => {
-      computePosition(this.buttonElement, this.listElement, this.settings[!this.isSubmenu ? 'floatingUi' : 'submenuFloatingUi']).then(({ x, y }) => {
-        Object.assign(this.listElement.style, {
-          left: `${x}px`,
-          top: `${y}px`,
-        });
-      });
-    };
-    compute();
-    if (!this.cleanupFloatingUi) {
-      this.cleanupFloatingUi = autoUpdate(this.buttonElement, this.listElement, compute);
-    }
-  }
-
   toggle(isOpen) {
     if (this.name) {
       Menu.hasOpen[this.name] = isOpen;
@@ -228,6 +213,21 @@ export class Menu {
         this.cleanupFloatingUi = null;
       }
     });
+  }
+
+  updateFloatingUi() {
+    const compute = () => {
+      computePosition(this.buttonElement, this.listElement, this.settings[!this.isSubmenu ? 'floatingUi' : 'submenuFloatingUi']).then(({ x, y }) => {
+        Object.assign(this.listElement.style, {
+          left: `${x}px`,
+          top: `${y}px`,
+        });
+      });
+    };
+    compute();
+    if (!this.cleanupFloatingUi) {
+      this.cleanupFloatingUi = autoUpdate(this.buttonElement, this.listElement, compute);
+    }
   }
 
   handleOutsidePointerDown(event) {
