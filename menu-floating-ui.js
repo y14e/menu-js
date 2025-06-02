@@ -17,11 +17,11 @@ export class Menu {
       },
       delay: 300,
       floatingUi: {
-        middleware: [flip(), offset(0), shift()],
+        middleware: [flip(), offset(), shift()],
         placement: 'bottom-start',
       },
       submenuFloatingUi: {
-        middleware: [flip(), offset(0), shift()],
+        middleware: [flip(), offset(), shift()],
         placement: 'right-start',
       },
     };
