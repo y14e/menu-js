@@ -277,38 +277,23 @@ export class Menu {
         });
         this.listElement.setAttribute('data-menu-placement', placement);
         if (this.settings.floatingUi.transformOrigin) {
-          let origin: Placement;
-          switch (placement) {
-            case 'top':
-              origin = '50% 100%';
-              break;
-            case 'top-start':
-            case 'right-end':
-              origin = '0 100%';
-              break;
-            case 'top-end':
-            case 'left-end':
-              origin = '100% 100%';
-              break;
-            case 'right':
-              origin = '0 50%';
-              break;
-            case 'right-start':
-            case 'bottom-start':
-              origin = '0 0';
-              break;
-            case 'bottom':
-              origin = '50% 0';
-              break;
-            case 'bottom-end':
-            case 'left-start':
-              origin = '100% 0';
-              break;
-            case 'left':
-              origin = '100% 50%';
-              break;
-          }
-          this.listElement.style.setProperty('transform-origin', origin);
+          this.listElement.style.setProperty(
+            'transform-origin',
+            {
+              top: '50% 100%',
+              'top-start': '0 100%',
+              'top-end': '100% 100%',
+              right: '0 50%',
+              'right-start': '0 0',
+              'right-end': '0 100%',
+              bottom: '50% 0',
+              'bottom-start': '0 0',
+              'bottom-end': '100% 0',
+              left: '100% 50%',
+              'left-start': '100% 0',
+              'left-end': '100% 100%',
+            }[placement],
+          );
         }
       });
     };
