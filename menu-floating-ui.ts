@@ -225,11 +225,8 @@ export class Menu {
       if (this.buttonElement) {
         this.updateFloatingUi();
       }
-    } else {
-      if (this.buttonElement && this.rootElement.contains(document.activeElement)) {
-        this.buttonElement.focus();
-      }
-      this.listElement.removeAttribute('data-menu-placement');
+    } else if (this.buttonElement && this.rootElement.contains(document.activeElement)) {
+      this.buttonElement.focus();
     }
     const opacity = window.getComputedStyle(this.listElement).getPropertyValue('opacity');
     if (this.animation) {
@@ -247,6 +244,7 @@ export class Menu {
     this.animation.addEventListener('finish', () => {
       this.animation = null;
       if (!isOpen) {
+        this.listElement.removeAttribute('data-menu-placement');
         this.listElement.style.setProperty('display', 'none');
       }
       this.listElement.style.removeProperty('opacity');
