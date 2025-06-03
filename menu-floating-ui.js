@@ -315,7 +315,10 @@ export class Menu {
 
   handleButtonKeyDown(event) {
     const { key } = event;
-    const keys = ['Enter', 'Escape', ' ', 'ArrowUp', ...(this.isSubmenu ? ['ArrowRight'] : []), 'ArrowDown'];
+    const keys = ['Enter', 'Escape', ' ', 'ArrowUp', 'ArrowDown'];
+    if (this.isSubmenu) {
+      keys.push('ArrowLeft');
+    }
     if (!keys.includes(key)) {
       return;
     }
