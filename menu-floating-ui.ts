@@ -178,13 +178,13 @@ export class Menu {
       });
     }
     if (this.submenus.length) {
-      this.submenus.forEach(menu => {
-        if (!this.isFocusable(menu.buttonElement)) {
+      this.submenus.forEach(submenu => {
+        if (!this.isFocusable(submenu.buttonElement)) {
           return;
         }
-        menu.rootElement.addEventListener('pointerover', this.handleSubmenuPointerOver);
-        menu.rootElement.addEventListener('pointerleave', this.handleSubmenuPointerLeave);
-        menu.rootElement.addEventListener('click', this.handleSubmenuClick);
+        submenu.rootElement.addEventListener('pointerover', this.handleSubmenuPointerOver);
+        submenu.rootElement.addEventListener('pointerleave', this.handleSubmenuPointerLeave);
+        submenu.rootElement.addEventListener('click', this.handleSubmenuClick);
       });
     }
     this.resetTabIndex();
@@ -207,9 +207,6 @@ export class Menu {
   }
 
   private toggle(isOpen: boolean): void {
-    if (this.name) {
-      Menu.hasOpen[this.name] = isOpen;
-    }
     if (this.buttonElement) {
       window.requestAnimationFrame(() => {
         this.buttonElement.setAttribute('aria-expanded', String(isOpen));
@@ -220,9 +217,19 @@ export class Menu {
         display: 'block',
         opacity: '0',
       });
+      Menu.menus
+        .filter(menu => !menu.rootElement.contains(this.rootElement))
+        .forEach(menu => {
+          menu.close();
+        });
       if (this.buttonElement) {
         this.updateFloatingUi();
       }
+    } else {
+      if (this.buttonElement && this.rootElement.contains(document.activeElement)) {
+        this.buttonElement.focus();
+      }
+      this.listElement.removeAttribute('data-menu-placement');
     }
     const opacity = window.getComputedStyle(this.listElement).getPropertyValue('opacity');
     if (this.animation) {
@@ -248,15 +255,19 @@ export class Menu {
         this.cleanupFloatingUi = null;
       }
     });
+    if (this.name) {
+      Menu.hasOpen[this.name] = isOpen;
+    }
   }
 
   private updateFloatingUi(): void {
     const compute = () => {
-      computePosition(this.buttonElement, this.listElement, this.settings[!this.isSubmenu ? 'floatingUi' : 'submenuFloatingUi']).then(({ x, y }: { x: number; y: number }) => {
+      computePosition(this.buttonElement, this.listElement, this.settings[!this.isSubmenu ? 'floatingUi' : 'submenuFloatingUi']).then(({ x, y, placement }: { x: number; y: number; placement: Placement }) => {
         Object.assign(this.listElement.style, {
           left: `${x}px`,
           top: `${y}px`,
         });
+        this.listElement.setAttribute('data-menu-placement', placement);
       });
     };
     compute();
@@ -412,11 +423,11 @@ export class Menu {
     window.clearTimeout(this.submenuTimer);
     const target = event.currentTarget;
     this.submenuTimer = window.setTimeout(() => {
-      this.submenus.forEach(menu => {
-        if (menu.rootElement === target) {
-          menu.open();
+      this.submenus.forEach(submenu => {
+        if (submenu.rootElement === target) {
+          submenu.open();
         } else {
-          menu.close();
+          submenu.close();
         }
       });
     }, this.settings.delay);
@@ -428,18 +439,18 @@ export class Menu {
       return;
     }
     this.submenuTimer = window.setTimeout(() => {
-      this.submenus.forEach(menu => {
-        menu.close();
+      this.submenus.forEach(submenu => {
+        submenu.close();
       });
     }, this.settings.delay);
   }
 
   private handleSubmenuClick(event: MouseEvent): void {
-    this.submenus.forEach(menu => {
-      if (menu.rootElement === (event.currentTarget as HTMLElement)) {
-        menu.open();
+    this.submenus.forEach(submenu => {
+      if (submenu.rootElement === (event.currentTarget as HTMLElement)) {
+        submenu.open();
       } else {
-        menu.close();
+        submenu.close();
       }
     });
   }
@@ -448,27 +459,19 @@ export class Menu {
     if (!this.buttonElement || this.buttonElement.getAttribute('aria-expanded') === 'true') {
       return;
     }
-    Menu.menus
-      .filter(menu => !menu.rootElement.contains(this.rootElement))
-      .forEach(menu => {
-        menu.close();
-      });
     this.toggle(true);
   }
 
   close(): void {
     if (this.submenus.length) {
       window.clearTimeout(this.submenuTimer);
-      this.submenus.forEach(menu => {
-        menu.close();
+      this.submenus.forEach(submenu => {
+        submenu.close();
       });
     }
     if (!this.buttonElement || this.buttonElement.getAttribute('aria-expanded') !== 'true') {
       return;
     }
     this.toggle(false);
-    if (this.buttonElement && this.rootElement.contains(document.activeElement)) {
-      this.buttonElement.focus();
-    }
   }
 }
