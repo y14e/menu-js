@@ -17,12 +17,15 @@ export class Menu {
       },
       delay: 300,
       floatingUi: {
-        middleware: [flip(), offset(), shift()],
-        placement: 'bottom-start',
-      },
-      submenuFloatingUi: {
-        middleware: [flip(), offset(), shift()],
-        placement: 'right-start',
+        menu: {
+          middleware: [flip(), offset(), shift()],
+          placement: 'bottom-start',
+        },
+        submenu: {
+          middleware: [flip(), offset(), shift()],
+          placement: 'right-start',
+        },
+        transformOrigin: true,
       },
     };
     this.settings = {
@@ -39,10 +42,14 @@ export class Menu {
       floatingUi: {
         ...this.defaults.floatingUi,
         ...options?.floatingUi,
-      },
-      submenuFloatingUi: {
-        ...this.defaults.submenuFloatingUi,
-        ...options?.submenuFloatingUi,
+        menu: {
+          ...this.defaults.floatingUi.menu,
+          ...options?.floatingUi.menu,
+        },
+        submenu: {
+          ...this.defaults.floatingUi.submenu,
+          ...options?.floatingUi.submenu,
+        },
       },
     };
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -211,6 +218,9 @@ export class Menu {
       if (!isOpen) {
         this.listElement.removeAttribute('data-menu-placement');
         this.listElement.style.setProperty('display', 'none');
+        if (this.settings.floatingUi.transformOrigin) {
+          this.listElement.style.removeProperty('transform-origin');
+        }
       }
       this.listElement.style.removeProperty('opacity');
       if (!isOpen && this.cleanupFloatingUi) {
@@ -225,12 +235,46 @@ export class Menu {
 
   updateFloatingUi() {
     const compute = () => {
-      computePosition(this.buttonElement, this.listElement, this.settings[!this.isSubmenu ? 'floatingUi' : 'submenuFloatingUi']).then(({ x, y, placement }) => {
+      computePosition(this.buttonElement, this.listElement, this.settings.floatingUi[!this.isSubmenu ? 'menu' : 'submenu']).then(({ x, y, placement }) => {
         Object.assign(this.listElement.style, {
           left: `${x}px`,
           top: `${y}px`,
         });
         this.listElement.setAttribute('data-menu-placement', placement);
+        if (this.settings.floatingUi.transformOrigin) {
+          let origin;
+          switch (placement) {
+            case 'top':
+              origin = '50% 100%';
+              break;
+            case 'top-start':
+            case 'right-end':
+              origin = '0 100%';
+              break;
+            case 'top-end':
+            case 'left-end':
+              origin = '100% 100%';
+              break;
+            case 'right':
+              origin = '0 50%';
+              break;
+            case 'right-start':
+            case 'bottom-start':
+              origin = '0 0';
+              break;
+            case 'bottom':
+              origin = '50% 0';
+              break;
+            case 'bottom-end':
+            case 'left-start':
+              origin = '100% 0';
+              break;
+            case 'left':
+              origin = '100% 50%';
+              break;
+          }
+          this.listElement.style.setProperty('transform-origin', origin);
+        }
       });
     };
     compute();
