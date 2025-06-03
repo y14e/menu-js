@@ -24,7 +24,7 @@ export class Menu {
   private animation!: Animation | null;
   private name?: string;
   private isSubmenu: boolean;
-  private submenus: Menu[] = [];
+  private submenus!: Menu[];
   private submenuTimer!: number;
   private static menus: Menu[] = [];
   private static hasOpen: Record<string, boolean> = {};
@@ -302,7 +302,10 @@ export class Menu {
     if (!this.buttonElement && shiftKey && key === 'Tab') {
       return;
     }
-    const keys = ['Enter', 'Escape', ' ', 'End', 'Home', ...(this.isSubmenu ? ['ArrowLeft'] : []), 'ArrowUp', 'ArrowDown'];
+    const keys = ['Enter', 'Escape', ' ', 'End', 'Home', 'ArrowUp', 'ArrowDown'];
+    if (this.isSubmenu) {
+      keys.push('ArrowLeft');
+    }
     function isAlpha(value: string): boolean {
       return /^[a-z]$/i.test(value);
     }

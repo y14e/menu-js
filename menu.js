@@ -275,7 +275,10 @@ export class Menu {
     if (!this.buttonElement && shiftKey && key === 'Tab') {
       return;
     }
-    const keys = ['Enter', 'Escape', ' ', 'End', 'Home', ...(this.isSubmenu ? ['ArrowLeft'] : []), 'ArrowUp', 'ArrowDown'];
+    const keys = ['Enter', 'Escape', ' ', 'End', 'Home', 'ArrowUp', 'ArrowDown'];
+    if (this.isSubmenu) {
+      keys.push('ArrowLeft');
+    }
     function isAlpha(value) {
       return /^[a-z]$/i.test(value);
     }
