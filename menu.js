@@ -245,7 +245,7 @@ export class Menu {
     const { key } = event;
     const keys = ['Enter', 'Escape', ' ', 'ArrowUp', 'ArrowDown'];
     if (this.isSubmenu) {
-      keys.push('ArrowLeft');
+      keys.push('ArrowRight');
     }
     if (!keys.includes(key)) {
       return;
