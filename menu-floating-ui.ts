@@ -34,12 +34,10 @@ export class Menu {
   private radioItemElements!: HTMLElement[];
   private radioItemElementsByGroup!: Map<HTMLElement, HTMLElement[]>;
   private animation!: Animation | null;
-  private name?: string;
   private isSubmenu: boolean;
   private submenus!: Menu[];
   private submenuTimer!: number;
   private static menus: Menu[] = [];
-  private static hasOpen: Record<string, boolean> = {};
   private cleanupFloatingUi!: Function | null;
 
   constructor(root: HTMLElement, options?: Partial<MenuOptions>, isSubmenu = false) {
@@ -121,9 +119,6 @@ export class Menu {
       });
     }
     this.animation = null;
-    if (this.rootElement.hasAttribute('data-menu-name')) {
-      this.name = this.rootElement.getAttribute('data-menu-name') || '';
-    }
     this.submenus = [];
     this.itemElements.forEach(item => {
       const root = item.parentElement as HTMLElement;
@@ -136,13 +131,9 @@ export class Menu {
     if (!this.isSubmenu) {
       Menu.menus.push(this);
     }
-    if (this.name && this.isFocusable(this.buttonElement)) {
-      Menu.hasOpen[this.name] ||= false;
-    }
     this.cleanupFloatingUi = null;
     this.handleOutsidePointerDown = this.handleOutsidePointerDown.bind(this);
     this.handleRootFocusOut = this.handleRootFocusOut.bind(this);
-    this.handleButtonPointerOver = this.handleButtonPointerOver.bind(this);
     this.handleButtonClick = this.handleButtonClick.bind(this);
     this.handleButtonKeyDown = this.handleButtonKeyDown.bind(this);
     this.handleListKeyDown = this.handleListKeyDown.bind(this);
@@ -168,7 +159,6 @@ export class Menu {
       if (!this.isFocusable(this.buttonElement)) {
         this.buttonElement.style.setProperty('pointer-events', 'none');
       }
-      this.buttonElement.addEventListener('pointerover', this.handleButtonPointerOver);
       this.buttonElement.addEventListener('click', this.handleButtonClick);
       this.buttonElement.addEventListener('keydown', this.handleButtonKeyDown);
       this.listElement.setAttribute('aria-labelledby', `${this.listElement.getAttribute('aria-labelledby') || ''} ${this.buttonElement.getAttribute('id')}`.trim());
@@ -263,9 +253,6 @@ export class Menu {
         this.cleanupFloatingUi = null;
       }
     });
-    if (this.name) {
-      Menu.hasOpen[this.name] = isOpen;
-    }
   }
 
   private updateFloatingUi(): void {
@@ -319,14 +306,6 @@ export class Menu {
     } else {
       this.resetTabIndex();
     }
-  }
-
-  private handleButtonPointerOver(event: PointerEvent): void {
-    if (event.pointerType !== 'mouse' || !this.name || !Menu.hasOpen[this.name]) {
-      return;
-    }
-    this.buttonElement.focus();
-    this.open();
   }
 
   private handleButtonClick(event: MouseEvent): void {
