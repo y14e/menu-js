@@ -7,5 +7,4 @@ import { Menu } from './menu.js';
 const myMenu = new Menu(...);
 ```
 ## Demo
-- https://y14e.github.io/menu-js/
-- https://y14e.github.io/menu-js/floating-ui.html
+https://y14e.github.io/menu-js/
