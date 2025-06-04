@@ -1,3 +1,5 @@
+import { Middleware, Placement, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
+
 type MenuOptions = {
   selector: {
     button: string;
@@ -8,6 +10,16 @@ type MenuOptions = {
     duration: number;
   };
   delay: number;
+  popover: {
+    menu: Partial<MenuPopoverOptions>;
+    submenu: Partial<MenuPopoverOptions>;
+    transformOrigin: boolean;
+  };
+};
+
+type MenuPopoverOptions = {
+  middleware: Middleware[];
+  placement: Placement;
 };
 
 export class Menu {
@@ -26,6 +38,7 @@ export class Menu {
   private submenus!: Menu[];
   private submenuTimer!: number;
   private static menus: Menu[] = [];
+  private cleanupPopover!: Function | null;
 
   constructor(root: HTMLElement, options?: Partial<MenuOptions>, isSubmenu = false) {
     this.rootElement = root;
@@ -39,6 +52,17 @@ export class Menu {
         duration: 300,
       },
       delay: 300,
+      popover: {
+        menu: {
+          middleware: [flip(), offset(), shift()],
+          placement: 'bottom-start',
+        },
+        submenu: {
+          middleware: [flip(), offset(), shift()],
+          placement: 'right-start',
+        },
+        transformOrigin: true,
+      },
     };
     this.settings = {
       ...this.defaults,
@@ -50,6 +74,18 @@ export class Menu {
       animation: {
         ...this.defaults.animation,
         ...options?.animation,
+      },
+      popover: {
+        ...this.defaults.popover,
+        ...options?.popover,
+        menu: {
+          ...this.defaults.popover.menu,
+          ...options?.popover?.menu,
+        },
+        submenu: {
+          ...this.defaults.popover.submenu,
+          ...options?.popover?.submenu,
+        },
       },
     };
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -95,6 +131,7 @@ export class Menu {
     if (!this.isSubmenu) {
       Menu.menus.push(this);
     }
+    this.cleanupPopover = null;
     this.handleOutsidePointerDown = this.handleOutsidePointerDown.bind(this);
     this.handleRootFocusOut = this.handleRootFocusOut.bind(this);
     this.handleButtonClick = this.handleButtonClick.bind(this);
@@ -165,7 +202,7 @@ export class Menu {
       item.removeAttribute('tabindex');
     });
     this.itemElements.forEach(item => {
-      item.setAttribute('tabindex', this.isFocusable(item) && this.itemElements.filter(this.isFocusable).findIndex(item => item.getAttribute('tabindex') === '0') === -1 ? '0' : '-1');
+      item.setAttribute('tabindex', this.isFocusable(item) && [...this.itemElements].filter(this.isFocusable).findIndex(item => item.getAttribute('tabindex') === '0') === -1 ? '0' : '-1');
     });
   }
 
@@ -185,6 +222,9 @@ export class Menu {
         .forEach(menu => {
           menu.close();
         });
+      if (this.buttonElement) {
+        this.updatePopover();
+      }
     } else if (this.buttonElement && this.rootElement.contains(document.activeElement)) {
       this.buttonElement.focus();
     }
@@ -204,10 +244,50 @@ export class Menu {
     this.animation.addEventListener('finish', () => {
       this.animation = null;
       if (!isOpen) {
+        this.listElement.removeAttribute('data-menu-placement');
         this.listElement.style.setProperty('display', 'none');
       }
       this.listElement.style.removeProperty('opacity');
+      if (!isOpen && this.cleanupPopover) {
+        this.cleanupPopover();
+        this.cleanupPopover = null;
+      }
     });
+  }
+
+  private updatePopover(): void {
+    const compute = () => {
+      computePosition(this.buttonElement, this.listElement, this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu']).then(({ x, y, placement }: { x: number; y: number; placement: Placement }) => {
+        Object.assign(this.listElement.style, {
+          left: `${x}px`,
+          top: `${y}px`,
+        });
+        this.listElement.setAttribute('data-menu-placement', placement);
+        if (this.settings.popover.transformOrigin) {
+          this.listElement.style.setProperty(
+            'transform-origin',
+            {
+              top: '50% 100%',
+              'top-start': '0 100%',
+              'top-end': '100% 100%',
+              right: '0 50%',
+              'right-start': '0 0',
+              'right-end': '0 100%',
+              bottom: '50% 0',
+              'bottom-start': '0 0',
+              'bottom-end': '100% 0',
+              left: '100% 50%',
+              'left-start': '100% 0',
+              'left-end': '100% 100%',
+            }[placement],
+          );
+        }
+      });
+    };
+    compute();
+    if (!this.cleanupPopover) {
+      this.cleanupPopover = autoUpdate(this.buttonElement, this.listElement, compute);
+    }
   }
 
   private handleOutsidePointerDown(event: PointerEvent): void {
@@ -234,7 +314,7 @@ export class Menu {
     if (!this.isSubmenu || (event instanceof PointerEvent && event.pointerType !== 'mouse')) {
       this.toggle(!isOpen);
     }
-    const focusables = this.itemElements.filter(this.isFocusable);
+    const focusables = [...this.itemElements].filter(this.isFocusable);
     if (!focusables.length) {
       return;
     }
@@ -262,7 +342,7 @@ export class Menu {
         return;
       }
       this.open();
-      const focusables = this.itemElements.filter(this.isFocusable);
+      const focusables = [...this.itemElements].filter(this.isFocusable);
       if (!focusables.length) {
         return;
       }
@@ -302,7 +382,7 @@ export class Menu {
       this.close();
       return;
     }
-    const focusables = this.itemElements.filter(this.isFocusable);
+    const focusables = [...this.itemElements].filter(this.isFocusable);
     if (['End', 'Home', 'ArrowUp', 'ArrowDown'].includes(key)) {
       const currentIndex = focusables.indexOf(active);
       const length = focusables.length;

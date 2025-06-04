@@ -1,3 +1,5 @@
+import { autoUpdate, computePosition, flip, offset, shift } from 'https://cdn.jsdelivr.net/npm/@floating-ui/dom@1.7.0/+esm';
+
 export class Menu {
   static menus = [];
 
@@ -13,6 +15,17 @@ export class Menu {
         duration: 300,
       },
       delay: 300,
+      popover: {
+        menu: {
+          middleware: [flip(), offset(), shift()],
+          placement: 'bottom-start',
+        },
+        submenu: {
+          middleware: [flip(), offset(), shift()],
+          placement: 'right-start',
+        },
+        transformOrigin: true,
+      },
     };
     this.settings = {
       ...this.defaults,
@@ -24,6 +37,18 @@ export class Menu {
       animation: {
         ...this.defaults.animation,
         ...options?.animation,
+      },
+      popover: {
+        ...this.defaults.popover,
+        ...options?.popover,
+        menu: {
+          ...this.defaults.popover.menu,
+          ...options?.popover.menu,
+        },
+        submenu: {
+          ...this.defaults.popover.submenu,
+          ...options?.popover.submenu,
+        },
       },
     };
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -69,6 +94,7 @@ export class Menu {
     if (!this.isSubmenu) {
       Menu.menus.push(this);
     }
+    this.cleanupPopover = null;
     this.handleOutsidePointerDown = this.handleOutsidePointerDown.bind(this);
     this.handleRootFocusOut = this.handleRootFocusOut.bind(this);
     this.handleButtonClick = this.handleButtonClick.bind(this);
@@ -159,6 +185,9 @@ export class Menu {
         .forEach(menu => {
           menu.close();
         });
+      if (this.buttonElement) {
+        this.updatePopover();
+      }
     } else if (this.buttonElement && this.rootElement.contains(document.activeElement)) {
       this.buttonElement.focus();
     }
@@ -178,10 +207,53 @@ export class Menu {
     this.animation.addEventListener('finish', () => {
       this.animation = null;
       if (!isOpen) {
+        this.listElement.removeAttribute('data-menu-placement');
         this.listElement.style.setProperty('display', 'none');
+        if (this.settings.popover.transformOrigin) {
+          this.listElement.style.removeProperty('transform-origin');
+        }
       }
       this.listElement.style.removeProperty('opacity');
+      if (!isOpen && this.cleanupPopover) {
+        this.cleanupPopover();
+        this.cleanupPopover = null;
+      }
     });
+  }
+
+  updatePopover() {
+    const compute = () => {
+      computePosition(this.buttonElement, this.listElement, this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu']).then(({ x, y, placement }) => {
+        Object.assign(this.listElement.style, {
+          left: `${x}px`,
+          top: `${y}px`,
+        });
+        this.listElement.setAttribute('data-menu-placement', placement);
+        if (this.settings.popover.transformOrigin) {
+          this.listElement.style.setProperty(
+            'transform-origin',
+            {
+              top: '50% 100%',
+              'top-start': '0 100%',
+              'top-end': '100% 100%',
+              right: '0 50%',
+              'right-start': '0 0',
+              'right-end': '0 100%',
+              bottom: '50% 0',
+              'bottom-start': '0 0',
+              'bottom-end': '100% 0',
+              left: '100% 50%',
+              'left-start': '100% 0',
+              'left-end': '100% 100%',
+            }[placement],
+          );
+        }
+      });
+    };
+    compute();
+    if (!this.cleanupPopover) {
+      this.cleanupPopover = autoUpdate(this.buttonElement, this.listElement, compute);
+    }
   }
 
   handleOutsidePointerDown(event) {
