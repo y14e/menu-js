@@ -83,13 +83,6 @@ export class Menu {
     }
     this.animation = null;
     this.submenus = [];
-    this.itemElements.forEach(item => {
-      const root = item.parentElement;
-      if (!root.querySelector(this.settings.selector.list)) {
-        return;
-      }
-      this.submenus.push(new Menu(root, this.settings, true));
-    });
     this.submenuTimer = 0;
     if (!this.isSubmenu) {
       Menu.menus.push(this);
@@ -128,6 +121,11 @@ export class Menu {
     }
     this.listElement.addEventListener('keydown', this.handleListKeyDown);
     this.itemElements.forEach(item => {
+      const root = item.parentElement;
+      if (!root.querySelector(this.settings.selector.list)) {
+        return;
+      }
+      this.submenus.push(new Menu(root, this.settings, true));
       item.addEventListener('pointerover', this.handleItemPointerOver);
     });
     if (this.checkboxItemElements.length) {
