@@ -338,9 +338,9 @@ export class Menu {
     }
     event.stopPropagation();
     event.preventDefault();
-    const active = document.activeElement;
+    const current = document.activeElement;
     if (['Enter', ' '].includes(key)) {
-      active.click();
+      current.click();
       return;
     }
     if (['Tab', 'Escape'].includes(key) || (this.isSubmenu && key === 'ArrowLeft')) {
@@ -349,7 +349,7 @@ export class Menu {
     }
     const focusables = this.itemElements.filter(this.isFocusable);
     if (['End', 'Home', 'ArrowUp', 'ArrowDown'].includes(key)) {
-      const currentIndex = focusables.indexOf(active);
+      const currentIndex = focusables.indexOf(current);
       const length = focusables.length;
       let newIndex;
       switch (key) {
@@ -374,7 +374,7 @@ export class Menu {
       return;
     }
     const focusablesByInitial = this.itemElementsByInitial[key.toLowerCase()].filter(this.isFocusable);
-    const index = focusablesByInitial.findIndex(item => focusables.indexOf(item) > focusables.indexOf(active));
+    const index = focusablesByInitial.findIndex(item => focusables.indexOf(item) > focusables.indexOf(current));
     focusablesByInitial[index !== -1 ? index : 0].focus();
   }
 
