@@ -212,11 +212,11 @@ export class Menu {
         }
       }
       this.listElement.style.removeProperty('opacity');
-      if (!isOpen && this.cleanupPopover) {
-        this.cleanupPopover();
-        this.cleanupPopover = null;
-      }
     });
+    if (!isOpen && this.cleanupPopover) {
+      this.cleanupPopover();
+      this.cleanupPopover = null;
+    }
   }
 
   updatePopover() {
