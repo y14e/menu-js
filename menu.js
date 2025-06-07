@@ -43,11 +43,11 @@ export class Menu {
         ...options?.popover,
         menu: {
           ...this.defaults.popover.menu,
-          ...options?.popover.menu,
+          ...options?.popover?.menu,
         },
         submenu: {
           ...this.defaults.popover.submenu,
-          ...options?.popover.submenu,
+          ...options?.popover?.submenu,
         },
       },
     };
