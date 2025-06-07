@@ -200,7 +200,7 @@ export class Menu {
       item.removeAttribute('tabindex');
     });
     this.itemElements.forEach(item => {
-      item.setAttribute('tabindex', this.isFocusable(item) && [...this.itemElements].filter(this.isFocusable).findIndex(item => item.getAttribute('tabindex') === '0') === -1 ? '0' : '-1');
+      item.setAttribute('tabindex', this.isFocusable(item) && this.itemElements.filter(this.isFocusable).findIndex(item => item.getAttribute('tabindex') === '0') === -1 ? '0' : '-1');
     });
   }
 
@@ -312,7 +312,7 @@ export class Menu {
     if (!this.isSubmenu || (event instanceof PointerEvent && event.pointerType !== 'mouse')) {
       this.toggle(!isOpen);
     }
-    const focusables = [...this.itemElements].filter(this.isFocusable);
+    const focusables = this.itemElements.filter(this.isFocusable);
     if (!focusables.length) {
       return;
     }
@@ -340,13 +340,14 @@ export class Menu {
         return;
       }
       this.open();
-      const focusables = [...this.itemElements].filter(this.isFocusable);
-      if (!focusables.length) {
+      const focusables = this.itemElements.filter(this.isFocusable);
+      const length = focusables.length;
+      if (!length) {
         return;
       }
       window.requestAnimationFrame(() => {
         window.requestAnimationFrame(() => {
-          focusables[key !== 'ArrowUp' ? 0 : focusables.length - 1].focus();
+          focusables[key !== 'ArrowUp' ? 0 : length - 1].focus();
         });
       });
       return;
@@ -380,7 +381,7 @@ export class Menu {
       this.close();
       return;
     }
-    const focusables = [...this.itemElements].filter(this.isFocusable);
+    const focusables = this.itemElements.filter(this.isFocusable);
     if (['End', 'Home', 'ArrowUp', 'ArrowDown'].includes(key)) {
       const currentIndex = focusables.indexOf(active);
       const length = focusables.length;

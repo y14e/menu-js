@@ -307,12 +307,13 @@ export class Menu {
       }
       this.open();
       const focusables = this.itemElements.filter(this.isFocusable);
-      if (!focusables.length) {
+      const length = focusables.length;
+      if (!length) {
         return;
       }
       window.requestAnimationFrame(() => {
         window.requestAnimationFrame(() => {
-          focusables[key !== 'ArrowUp' ? 0 : focusables.length - 1].focus();
+          focusables[key !== 'ArrowUp' ? 0 : length - 1].focus();
         });
       });
       return;
