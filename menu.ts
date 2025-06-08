@@ -2,7 +2,7 @@ import { Middleware, Placement, autoUpdate, computePosition, flip, offset, shift
 
 type MenuOptions = {
   selector: {
-    button: string;
+    trigger: string;
     list: string;
     item: string;
   };
@@ -26,7 +26,7 @@ export class Menu {
   private rootElement: HTMLElement;
   private defaults: MenuOptions;
   private settings: MenuOptions;
-  private buttonElement: HTMLElement;
+  private triggerElement: HTMLElement;
   private listElement: HTMLElement;
   private itemElements: HTMLElement[];
   private itemElementsByInitial!: Record<string, HTMLElement[]>;
@@ -44,7 +44,7 @@ export class Menu {
     this.rootElement = root;
     this.defaults = {
       selector: {
-        button: '[data-menu-button]',
+        trigger: '[data-menu-trigger]',
         list: '[role="menu"]',
         item: '[role^="menuitem"]',
       },
@@ -92,7 +92,7 @@ export class Menu {
       this.settings.animation.duration = 0;
     }
     this.isSubmenu = isSubmenu;
-    this.buttonElement = this.rootElement.querySelector(this.settings.selector[!this.isSubmenu ? 'button' : 'item']) as HTMLElement;
+    this.triggerElement = this.rootElement.querySelector(this.settings.selector[!this.isSubmenu ? 'trigger' : 'item']) as HTMLElement;
     this.listElement = this.rootElement.querySelector(this.settings.selector.list) as HTMLElement;
     this.itemElements = [...this.listElement.querySelectorAll(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} *)`)] as HTMLElement[];
     if (!this.listElement || !this.itemElements.length) {
@@ -127,8 +127,8 @@ export class Menu {
     this.cleanupPopover = null;
     this.handleOutsidePointerDown = this.handleOutsidePointerDown.bind(this);
     this.handleRootFocusOut = this.handleRootFocusOut.bind(this);
-    this.handleButtonClick = this.handleButtonClick.bind(this);
-    this.handleButtonKeyDown = this.handleButtonKeyDown.bind(this);
+    this.handleTriggerClick = this.handleTriggerClick.bind(this);
+    this.handleTriggerKeyDown = this.handleTriggerKeyDown.bind(this);
     this.handleListKeyDown = this.handleListKeyDown.bind(this);
     this.handleItemPointerOver = this.handleItemPointerOver.bind(this);
     this.handleCheckboxItemClick = this.handleCheckboxItemClick.bind(this);
@@ -142,19 +142,19 @@ export class Menu {
   private initialize(): void {
     document.addEventListener('pointerdown', this.handleOutsidePointerDown);
     this.rootElement.addEventListener('focusout', this.handleRootFocusOut);
-    if (this.buttonElement) {
+    if (this.triggerElement) {
       const id = Math.random().toString(36).slice(-8);
-      this.buttonElement.setAttribute('aria-controls', (this.listElement.id ||= `menu-list-${id}`));
-      this.buttonElement.setAttribute('aria-expanded', 'false');
-      this.buttonElement.setAttribute('aria-haspopup', 'menu');
-      this.buttonElement.setAttribute('id', this.buttonElement.getAttribute('id') || `menu-button-${id}`);
-      this.buttonElement.setAttribute('tabindex', this.isFocusable(this.buttonElement) && !this.isSubmenu ? '0' : '-1');
-      if (!this.isFocusable(this.buttonElement)) {
-        this.buttonElement.style.setProperty('pointer-events', 'none');
+      this.triggerElement.setAttribute('aria-controls', (this.listElement.id ||= `menu-list-${id}`));
+      this.triggerElement.setAttribute('aria-expanded', 'false');
+      this.triggerElement.setAttribute('aria-haspopup', 'menu');
+      this.triggerElement.setAttribute('id', this.triggerElement.getAttribute('id') || `menu-trigger-${id}`);
+      this.triggerElement.setAttribute('tabindex', this.isFocusable(this.triggerElement) && !this.isSubmenu ? '0' : '-1');
+      if (!this.isFocusable(this.triggerElement)) {
+        this.triggerElement.style.setProperty('pointer-events', 'none');
       }
-      this.buttonElement.addEventListener('click', this.handleButtonClick);
-      this.buttonElement.addEventListener('keydown', this.handleButtonKeyDown);
-      this.listElement.setAttribute('aria-labelledby', `${this.listElement.getAttribute('aria-labelledby') || ''} ${this.buttonElement.getAttribute('id')}`.trim());
+      this.triggerElement.addEventListener('click', this.handleTriggerClick);
+      this.triggerElement.addEventListener('keydown', this.handleTriggerKeyDown);
+      this.listElement.setAttribute('aria-labelledby', `${this.listElement.getAttribute('aria-labelledby') || ''} ${this.triggerElement.getAttribute('id')}`.trim());
     }
     this.listElement.addEventListener('keydown', this.handleListKeyDown);
     this.itemElements.forEach(item => {
@@ -177,7 +177,7 @@ export class Menu {
     }
     if (this.submenus.length) {
       this.submenus.forEach(submenu => {
-        if (!this.isFocusable(submenu.buttonElement)) {
+        if (!this.isFocusable(submenu.triggerElement)) {
           return;
         }
         submenu.rootElement.addEventListener('pointerover', this.handleSubmenuPointerOver);
@@ -205,9 +205,9 @@ export class Menu {
   }
 
   private toggle(isOpen: boolean): void {
-    if (this.buttonElement) {
+    if (this.triggerElement) {
       window.requestAnimationFrame(() => {
-        this.buttonElement.setAttribute('aria-expanded', String(isOpen));
+        this.triggerElement.setAttribute('aria-expanded', String(isOpen));
       });
     }
     if (isOpen) {
@@ -220,11 +220,11 @@ export class Menu {
         .forEach(menu => {
           menu.close();
         });
-      if (this.buttonElement) {
+      if (this.triggerElement) {
         this.updatePopover();
       }
-    } else if (this.buttonElement && this.rootElement.contains(document.activeElement)) {
-      this.buttonElement.focus();
+    } else if (this.triggerElement && this.rootElement.contains(document.activeElement)) {
+      this.triggerElement.focus();
     }
     const opacity = window.getComputedStyle(this.listElement).getPropertyValue('opacity');
     if (this.animation) {
@@ -255,7 +255,7 @@ export class Menu {
 
   private updatePopover(): void {
     const compute = () => {
-      computePosition(this.buttonElement, this.listElement, this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu']).then(({ x, y, placement }: { x: number; y: number; placement: Placement }) => {
+      computePosition(this.triggerElement, this.listElement, this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu']).then(({ x, y, placement }: { x: number; y: number; placement: Placement }) => {
         Object.assign(this.listElement.style, {
           left: `${x}px`,
           top: `${y}px`,
@@ -284,31 +284,31 @@ export class Menu {
     };
     compute();
     if (!this.cleanupPopover) {
-      this.cleanupPopover = autoUpdate(this.buttonElement, this.listElement, compute);
+      this.cleanupPopover = autoUpdate(this.triggerElement, this.listElement, compute);
     }
   }
 
   private handleOutsidePointerDown(event: PointerEvent): void {
-    if (this.rootElement.contains(event.target as HTMLElement) || !this.buttonElement) {
+    if (this.rootElement.contains(event.target as HTMLElement) || !this.triggerElement) {
       return;
     }
     this.close();
   }
 
   private handleRootFocusOut(event: FocusEvent): void {
-    if (!event.relatedTarget || this.rootElement.contains(event.relatedTarget as HTMLElement) || (this.buttonElement && this.buttonElement.getAttribute('aria-expanded') !== 'true')) {
+    if (!event.relatedTarget || this.rootElement.contains(event.relatedTarget as HTMLElement) || (this.triggerElement && this.triggerElement.getAttribute('aria-expanded') !== 'true')) {
       return;
     }
-    if (this.buttonElement) {
+    if (this.triggerElement) {
       this.close();
     } else {
       this.resetTabIndex();
     }
   }
 
-  private handleButtonClick(event: MouseEvent): void {
+  private handleTriggerClick(event: MouseEvent): void {
     event.preventDefault();
-    const isOpen = this.buttonElement.getAttribute('aria-expanded') === 'true';
+    const isOpen = this.triggerElement.getAttribute('aria-expanded') === 'true';
     if (!this.isSubmenu || (event instanceof PointerEvent && event.pointerType !== 'mouse')) {
       this.toggle(!isOpen);
     }
@@ -325,7 +325,7 @@ export class Menu {
     }
   }
 
-  private handleButtonKeyDown(event: KeyboardEvent): void {
+  private handleTriggerKeyDown(event: KeyboardEvent): void {
     const { key } = event;
     const keys = ['Enter', 'Escape', ' ', 'ArrowUp', 'ArrowDown'];
     if (this.isSubmenu) {
@@ -357,7 +357,7 @@ export class Menu {
 
   private handleListKeyDown(event: KeyboardEvent): void {
     const { key, shiftKey } = event;
-    if (!this.buttonElement && shiftKey && key === 'Tab') {
+    if (!this.triggerElement && shiftKey && key === 'Tab') {
       return;
     }
     const keys = ['Enter', 'Escape', ' ', 'End', 'Home', 'ArrowUp', 'ArrowDown'];
@@ -400,7 +400,7 @@ export class Menu {
           newIndex = (currentIndex + 1) % length;
           break;
       }
-      if (!this.buttonElement) {
+      if (!this.triggerElement) {
         focusables[currentIndex].setAttribute('tabindex', '-1');
         focusables[newIndex!].setAttribute('tabindex', '0');
       }
@@ -467,7 +467,7 @@ export class Menu {
   }
 
   open(): void {
-    if (!this.buttonElement || this.buttonElement.getAttribute('aria-expanded') === 'true') {
+    if (!this.triggerElement || this.triggerElement.getAttribute('aria-expanded') === 'true') {
       return;
     }
     this.toggle(true);
@@ -480,7 +480,7 @@ export class Menu {
         submenu.close();
       });
     }
-    if (!this.buttonElement || this.buttonElement.getAttribute('aria-expanded') !== 'true') {
+    if (!this.triggerElement || this.triggerElement.getAttribute('aria-expanded') !== 'true') {
       return;
     }
     this.toggle(false);
