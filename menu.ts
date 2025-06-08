@@ -129,8 +129,8 @@ export class Menu {
     this.handleRootFocusOut = this.handleRootFocusOut.bind(this);
     this.handleTriggerClick = this.handleTriggerClick.bind(this);
     this.handleTriggerKeyDown = this.handleTriggerKeyDown.bind(this);
-    this.handleListKeyDown = this.handleListKeyDown.bind(this);
     this.handleItemPointerOver = this.handleItemPointerOver.bind(this);
+    this.handleItemKeyDown = this.handleItemKeyDown.bind(this);
     this.handleCheckboxItemClick = this.handleCheckboxItemClick.bind(this);
     this.handleRadioItemClick = this.handleRadioItemClick.bind(this);
     this.handleSubmenuPointerOver = this.handleSubmenuPointerOver.bind(this);
@@ -156,7 +156,6 @@ export class Menu {
       this.triggerElement.addEventListener('keydown', this.handleTriggerKeyDown);
       this.listElement.setAttribute('aria-labelledby', `${this.listElement.getAttribute('aria-labelledby') || ''} ${this.triggerElement.getAttribute('id')}`.trim());
     }
-    this.listElement.addEventListener('keydown', this.handleListKeyDown);
     this.itemElements.forEach(item => {
       const root = item.parentElement as HTMLElement;
       if (!root.querySelector(this.settings.selector.list)) {
@@ -164,6 +163,7 @@ export class Menu {
       }
       this.submenus.push(new Menu(root, this.settings, true));
       item.addEventListener('pointerover', this.handleItemPointerOver);
+      item.addEventListener('keydown', this.handleItemKeyDown);
     });
     if (this.checkboxItemElements.length) {
       this.checkboxItemElements.forEach(item => {
@@ -355,7 +355,13 @@ export class Menu {
     this.close();
   }
 
-  private handleListKeyDown(event: KeyboardEvent): void {
+  private handleItemPointerOver(event: PointerEvent): void {
+    if (this.rootElement.querySelector(':focus-visible')) {
+      (event.currentTarget as HTMLElement).focus();
+    }
+  }
+
+  private handleItemKeyDown(event: KeyboardEvent): void {
     const { key, shiftKey } = event;
     if (!this.triggerElement && shiftKey && key === 'Tab') {
       return;
@@ -410,12 +416,6 @@ export class Menu {
     const focusablesByInitial = this.itemElementsByInitial[key.toLowerCase()].filter(this.isFocusable);
     const index = focusablesByInitial.findIndex(item => focusables.indexOf(item) > focusables.indexOf(current));
     focusablesByInitial[index !== -1 ? index : 0].focus();
-  }
-
-  private handleItemPointerOver(event: PointerEvent): void {
-    if (this.rootElement.querySelector(':focus-visible')) {
-      (event.currentTarget as HTMLElement).focus();
-    }
   }
 
   private handleCheckboxItemClick(event: MouseEvent): void {
