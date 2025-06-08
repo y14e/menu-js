@@ -120,13 +120,13 @@ export class Menu {
       this.listElement.setAttribute('aria-labelledby', `${this.listElement.getAttribute('aria-labelledby') || ''} ${this.triggerElement.getAttribute('id')}`.trim());
     }
     this.itemElements.forEach(item => {
+      item.addEventListener('keydown', this.handleItemKeyDown);
       const root = item.parentElement;
       if (!root.querySelector(this.settings.selector.list)) {
         return;
       }
       this.submenus.push(new Menu(root, this.settings, true));
       item.addEventListener('pointerover', this.handleItemPointerOver);
-      item.addEventListener('keydown', this.handleItemKeyDown);
     });
     if (this.checkboxItemElements.length) {
       this.checkboxItemElements.forEach(item => {
