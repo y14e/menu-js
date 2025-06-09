@@ -104,7 +104,7 @@ export class Menu {
     this.itemElementsByInitial = {};
     this.itemElements.forEach(item => {
       const initial = item.textContent!.trim().charAt(0).toLowerCase();
-      if (/[a-z]/.test(initial)) {
+      if (/\S/.test(initial)) {
         item.setAttribute('aria-keyshortcuts', initial);
         (this.itemElementsByInitial[initial] ||= []).push(item);
       }
@@ -373,10 +373,7 @@ export class Menu {
     if (this.isSubmenu) {
       keys.push('ArrowLeft');
     }
-    function isAlpha(value: string): boolean {
-      return /^[a-z]$/i.test(value);
-    }
-    if (!(keys.includes(key) || (shiftKey && key === 'Tab') || (isAlpha(key) && this.itemElementsByInitial[key.toLowerCase()]?.filter(this.isFocusable).length))) {
+    if (!(keys.includes(key) || (shiftKey && key === 'Tab') || (/^\S$/i.test(key) && this.itemElementsByInitial[key.toLowerCase()]?.filter(this.isFocusable).length))) {
       return;
     }
     event.stopPropagation();
