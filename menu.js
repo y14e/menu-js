@@ -173,6 +173,12 @@ export class Menu {
         display: 'block',
         opacity: '0',
       });
+      if (this.submenus.length) {
+        window.clearTimeout(this.submenuTimer);
+        this.submenus.forEach(submenu => {
+          submenu.close();
+        });
+      }
       Menu.menus
         .filter(menu => !menu.rootElement.contains(this.rootElement))
         .forEach(menu => {
@@ -435,12 +441,6 @@ export class Menu {
   }
 
   close() {
-    if (this.submenus.length) {
-      window.clearTimeout(this.submenuTimer);
-      this.submenus.forEach(submenu => {
-        submenu.close();
-      });
-    }
     if ((!this.isContextMenu && (!this.triggerElement || this.triggerElement.getAttribute('aria-expanded') !== 'true')) || (this.isContextMenu && !this.listElement.hasAttribute('data-context-menu-open'))) {
       return;
     }
@@ -474,6 +474,6 @@ export class ContextMenu extends Menu {
   handleTriggerContextMenu(event) {
     event.preventDefault();
     this.update(event);
-    super.toggle(true);
+    super.open();
   }
 }
