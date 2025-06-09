@@ -121,9 +121,6 @@ export class Menu {
     this.animation = null;
     this.submenus = [];
     this.submenuTimer = 0;
-    if (!this.isSubmenu) {
-      Menu.menus.push(this);
-    }
     this.cleanupPopover = null;
     document.addEventListener('pointerdown', this.handleOutsidePointerDown.bind(this));
     this.rootElement.addEventListener('focusout', this.handleRootFocusOut.bind(this));
@@ -172,6 +169,7 @@ export class Menu {
     }
     this.resetTabIndex();
     if (!this.isSubmenu) {
+      Menu.menus.push(this);
       this.rootElement.setAttribute('data-menu-initialized', '');
     }
   }
