@@ -459,10 +459,10 @@ export class ContextMenu extends Menu {
     if (this.listElement.hasAttribute('data-context-menu-open')) {
       return;
     }
-    const { clientX: x, clientY: y } = event;
+    const { clientX, clientY } = event;
     this.popoverReferenceElement = {
       getBoundingClientRect() {
-        return new DOMRect(x, y, 0, 0);
+        return new DOMRect(clientX, clientY, 0, 0);
       },
     };
   }
