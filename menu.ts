@@ -1,4 +1,4 @@
-import { Middleware, Placement, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
+import { Middleware, Placement, VirtualElement, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
 
 type MenuOptions = {
   selector: {
@@ -23,24 +23,26 @@ type MenuPopoverOptions = {
 };
 
 export class Menu {
-  private rootElement: HTMLElement;
+  protected rootElement: HTMLElement;
   private defaults: MenuOptions;
   private settings: MenuOptions;
-  private triggerElement: HTMLElement;
-  private listElement: HTMLElement;
+  private isSubmenu: boolean;
+  private isContextMenu: boolean;
+  protected triggerElement: HTMLElement;
+  protected listElement: HTMLElement;
   private itemElements: HTMLElement[];
   private itemElementsByInitial!: Record<string, HTMLElement[]>;
   private checkboxItemElements!: HTMLElement[];
   private radioItemElements!: HTMLElement[];
   private radioItemElementsByGroup!: Map<HTMLElement, HTMLElement[]>;
   private animation!: Animation | null;
-  private isSubmenu: boolean;
   private submenus!: Menu[];
   private submenuTimer!: number;
   private static menus: Menu[] = [];
+  protected popoverReferenceElement!: Element | VirtualElement;
   private cleanupPopover!: Function | null;
 
-  constructor(root: HTMLElement, options?: Partial<MenuOptions>, isSubmenu = false) {
+  constructor(root: HTMLElement, options?: Partial<MenuOptions>, isSubmenu = false, isContextMenu = false) {
     this.rootElement = root;
     this.defaults = {
       selector: {
@@ -92,6 +94,7 @@ export class Menu {
       this.settings.animation.duration = 0;
     }
     this.isSubmenu = isSubmenu;
+    this.isContextMenu = isContextMenu;
     this.triggerElement = this.rootElement.querySelector(this.settings.selector[!this.isSubmenu ? 'trigger' : 'item']) as HTMLElement;
     this.listElement = this.rootElement.querySelector(this.settings.selector.list) as HTMLElement;
     this.itemElements = [...this.listElement.querySelectorAll(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} *)`)] as HTMLElement[];
@@ -121,10 +124,13 @@ export class Menu {
     this.animation = null;
     this.submenus = [];
     this.submenuTimer = 0;
+    if (!this.isContextMenu) {
+      this.popoverReferenceElement = this.triggerElement;
+    }
     this.cleanupPopover = null;
     document.addEventListener('pointerdown', this.handleOutsidePointerDown.bind(this));
     this.rootElement.addEventListener('focusout', this.handleRootFocusOut.bind(this));
-    if (this.triggerElement) {
+    if (!this.isContextMenu && this.triggerElement) {
       const id = Math.random().toString(36).slice(-8);
       this.triggerElement.setAttribute('aria-controls', (this.listElement.id ||= `menu-list-${id}`));
       this.triggerElement.setAttribute('aria-expanded', 'false');
@@ -187,10 +193,18 @@ export class Menu {
     });
   }
 
-  private toggle(isOpen: boolean): void {
+  protected toggle(isOpen: boolean): void {
     if (this.triggerElement) {
       window.requestAnimationFrame(() => {
-        this.triggerElement.setAttribute('aria-expanded', String(isOpen));
+        if (!this.isContextMenu) {
+          this.triggerElement.setAttribute('aria-expanded', String(isOpen));
+        } else {
+          if (isOpen) {
+            this.listElement.setAttribute('data-context-menu-open', '');
+          } else {
+            this.listElement.removeAttribute('data-context-menu-open');
+          }
+        }
       });
     }
     if (isOpen) {
@@ -238,7 +252,7 @@ export class Menu {
 
   private updatePopover(): void {
     const compute = () => {
-      computePosition(this.triggerElement, this.listElement, this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu']).then(({ x, y, placement }: { x: number; y: number; placement: Placement }) => {
+      computePosition(this.popoverReferenceElement, this.listElement, this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu']).then(({ x, y, placement }: { x: number; y: number; placement: Placement }) => {
         Object.assign(this.listElement.style, {
           left: `${x}px`,
           top: `${y}px`,
@@ -272,14 +286,14 @@ export class Menu {
   }
 
   private handleOutsidePointerDown(event: PointerEvent): void {
-    if (this.rootElement.contains(event.target as HTMLElement) || !this.triggerElement) {
+    if (this[!this.isContextMenu ? 'rootElement' : 'listElement'].contains(event.target as HTMLElement) || !this.triggerElement) {
       return;
     }
     this.close();
   }
 
   private handleRootFocusOut(event: FocusEvent): void {
-    if (!event.relatedTarget || this.rootElement.contains(event.relatedTarget as HTMLElement) || (this.triggerElement && this.triggerElement.getAttribute('aria-expanded') !== 'true')) {
+    if (!event.relatedTarget || this[!this.isContextMenu ? 'rootElement' : 'listElement'].contains(event.relatedTarget as HTMLElement) || this.triggerElement?.getAttribute('aria-expanded') !== 'true') {
       return;
     }
     if (this.triggerElement) {
@@ -291,7 +305,7 @@ export class Menu {
 
   private handleTriggerClick(event: MouseEvent): void {
     event.preventDefault();
-    const isOpen = this.triggerElement.getAttribute('aria-expanded') === 'true';
+    const isOpen = this.triggerElement.getAttribute('aria-expanded') === 'true' || this.listElement.hasAttribute('data-context-menu-open');
     if (!this.isSubmenu || (event instanceof PointerEvent && event.pointerType !== 'mouse')) {
       this.toggle(!isOpen);
     }
@@ -450,7 +464,7 @@ export class Menu {
   }
 
   open(): void {
-    if (!this.triggerElement || this.triggerElement.getAttribute('aria-expanded') === 'true') {
+    if ((!this.isContextMenu && (!this.triggerElement || this.triggerElement.getAttribute('aria-expanded') === 'true')) || (this.isContextMenu && this.listElement.hasAttribute('data-context-menu-open'))) {
       return;
     }
     this.toggle(true);
@@ -463,9 +477,39 @@ export class Menu {
         submenu.close();
       });
     }
-    if (!this.triggerElement || this.triggerElement.getAttribute('aria-expanded') !== 'true') {
+    if ((!this.isContextMenu && (!this.triggerElement || this.triggerElement.getAttribute('aria-expanded') !== 'true')) || (this.isContextMenu && !this.listElement.hasAttribute('data-context-menu-open'))) {
       return;
     }
     this.toggle(false);
+  }
+}
+
+export class ContextMenu extends Menu {
+  constructor(root: HTMLElement, options?: Partial<MenuOptions>) {
+    super(root, options, false, true);
+    this.rootElement.addEventListener('mousemove', this.handleRootMouseMove.bind(this));
+    this.triggerElement.addEventListener('contextmenu', this.handleTriggerContextMenu.bind(this));
+  }
+
+  update(event: MouseEvent): void {
+    if (this.listElement.hasAttribute('data-context-menu-open')) {
+      return;
+    }
+    const { clientX: x, clientY: y } = event;
+    this.popoverReferenceElement = {
+      getBoundingClientRect() {
+        return new DOMRect(x, y, 0, 0);
+      },
+    };
+  }
+
+  handleRootMouseMove(event: MouseEvent): void {
+    this.update(event);
+  }
+
+  handleTriggerContextMenu(event: MouseEvent): void {
+    event.preventDefault();
+    this.update(event);
+    super.toggle(true);
   }
 }
