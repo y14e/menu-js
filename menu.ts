@@ -193,7 +193,7 @@ export class Menu {
     });
   }
 
-  protected toggle(isOpen: boolean): void {
+  private toggle(isOpen: boolean): void {
     if (this.triggerElement) {
       window.requestAnimationFrame(() => {
         if (!this.isContextMenu) {
