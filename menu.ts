@@ -125,23 +125,8 @@ export class Menu {
       Menu.menus.push(this);
     }
     this.cleanupPopover = null;
-    this.handleOutsidePointerDown = this.handleOutsidePointerDown.bind(this);
-    this.handleRootFocusOut = this.handleRootFocusOut.bind(this);
-    this.handleTriggerClick = this.handleTriggerClick.bind(this);
-    this.handleTriggerKeyDown = this.handleTriggerKeyDown.bind(this);
-    this.handleItemPointerOver = this.handleItemPointerOver.bind(this);
-    this.handleItemKeyDown = this.handleItemKeyDown.bind(this);
-    this.handleCheckboxItemClick = this.handleCheckboxItemClick.bind(this);
-    this.handleRadioItemClick = this.handleRadioItemClick.bind(this);
-    this.handleSubmenuPointerOver = this.handleSubmenuPointerOver.bind(this);
-    this.handleSubmenuPointerLeave = this.handleSubmenuPointerLeave.bind(this);
-    this.handleSubmenuClick = this.handleSubmenuClick.bind(this);
-    this.initialize();
-  }
-
-  private initialize(): void {
-    document.addEventListener('pointerdown', this.handleOutsidePointerDown);
-    this.rootElement.addEventListener('focusout', this.handleRootFocusOut);
+    document.addEventListener('pointerdown', this.handleOutsidePointerDown.bind(this));
+    this.rootElement.addEventListener('focusout', this.handleRootFocusOut.bind(this));
     if (this.triggerElement) {
       const id = Math.random().toString(36).slice(-8);
       this.triggerElement.setAttribute('aria-controls', (this.listElement.id ||= `menu-list-${id}`));
@@ -152,27 +137,27 @@ export class Menu {
       if (!this.isFocusable(this.triggerElement)) {
         this.triggerElement.style.setProperty('pointer-events', 'none');
       }
-      this.triggerElement.addEventListener('click', this.handleTriggerClick);
-      this.triggerElement.addEventListener('keydown', this.handleTriggerKeyDown);
+      this.triggerElement.addEventListener('click', this.handleTriggerClick.bind(this));
+      this.triggerElement.addEventListener('keydown', this.handleTriggerKeyDown.bind(this));
       this.listElement.setAttribute('aria-labelledby', `${this.listElement.getAttribute('aria-labelledby') || ''} ${this.triggerElement.getAttribute('id')}`.trim());
     }
     this.itemElements.forEach(item => {
-      item.addEventListener('keydown', this.handleItemKeyDown);
+      item.addEventListener('keydown', this.handleItemKeyDown.bind(this));
       const root = item.parentElement as HTMLElement;
       if (!root.querySelector(this.settings.selector.list)) {
         return;
       }
       this.submenus.push(new Menu(root, this.settings, true));
-      item.addEventListener('pointerover', this.handleItemPointerOver);
+      item.addEventListener('pointerover', this.handleItemPointerOver.bind(this));
     });
     if (this.checkboxItemElements.length) {
       this.checkboxItemElements.forEach(item => {
-        item.addEventListener('click', this.handleCheckboxItemClick);
+        item.addEventListener('click', this.handleCheckboxItemClick.bind(this));
       });
     }
     if (this.radioItemElements.length) {
       this.radioItemElements.forEach(item => {
-        item.addEventListener('click', this.handleRadioItemClick);
+        item.addEventListener('click', this.handleRadioItemClick.bind(this));
       });
     }
     if (this.submenus.length) {
@@ -180,9 +165,9 @@ export class Menu {
         if (!this.isFocusable(submenu.triggerElement)) {
           return;
         }
-        submenu.rootElement.addEventListener('pointerover', this.handleSubmenuPointerOver);
-        submenu.rootElement.addEventListener('pointerleave', this.handleSubmenuPointerLeave);
-        submenu.rootElement.addEventListener('click', this.handleSubmenuClick);
+        submenu.rootElement.addEventListener('pointerover', this.handleSubmenuPointerOver.bind(this));
+        submenu.rootElement.addEventListener('pointerleave', this.handleSubmenuPointerLeave.bind(this));
+        submenu.rootElement.addEventListener('click', this.handleSubmenuClick.bind(this));
       });
     }
     this.resetTabIndex();
