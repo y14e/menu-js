@@ -373,7 +373,7 @@ export class Menu {
     if (this.isSubmenu) {
       keys.push('ArrowLeft');
     }
-    if (!(keys.includes(key) || (shiftKey && key === 'Tab') || (/^\S$/i.test(key) && this.itemElementsByInitial[key.toLowerCase()]?.filter(this.isFocusable).length))) {
+    if (!keys.includes(key) && (!shiftKey || key !== 'Tab') && (!/^\S$/i.test(key) || !this.itemElementsByInitial[key.toLowerCase()]?.filter(this.isFocusable).length)) {
       return;
     }
     event.stopPropagation();
