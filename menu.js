@@ -175,13 +175,15 @@ export class Menu {
         display: 'block',
         opacity: '0',
       });
-      if (this.isContextMenu && isShiftF10) {
-        this.popoverReferenceElement = this.triggerElement;
-        this.updatePopover({
-          ...this.settings.popover.menu,
-          placement: undefined,
-        });
-      } else if (this.triggerElement) {
+      if (this.triggerElement) {
+        if (this.isContextMenu && isShiftF10) {
+          const rect = this.triggerElement.getBoundingClientRect();
+          this.popoverReferenceElement = {
+            getBoundingClientRect() {
+              return new DOMRect(rect.left, rect.top, 0, 0);
+            },
+          };
+        }
         this.updatePopover();
       }
       if (this.submenus.length) {
@@ -228,9 +230,9 @@ export class Menu {
     }
   }
 
-  updatePopover(settings = this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu']) {
+  updatePopover() {
     const compute = () => {
-      computePosition(this.popoverReferenceElement, this.listElement, settings).then(({ x, y, placement }) => {
+      computePosition(this.popoverReferenceElement, this.listElement, this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu']).then(({ x, y, placement }) => {
         Object.assign(this.listElement.style, {
           left: `${x}px`,
           top: `${y}px`,
