@@ -378,7 +378,7 @@ export class Menu {
       return;
     }
     const focusablesByInitial = this.itemElementsByInitial[key.toLowerCase()].filter(this.isFocusable);
-    const index = focusablesByInitial.findIndex(item => focusables.indexOf(item) > focusables.indexOf(current));
+    const index = focusablesByInitial.findIndex(focusable => focusables.indexOf(focusable) > focusables.indexOf(current));
     focusablesByInitial[index !== -1 ? index : 0].focus();
   }
 
@@ -448,7 +448,6 @@ export class Menu {
 export class ContextMenu extends Menu {
   constructor(root, options) {
     super(root, options, false, true);
-    this.rootElement.addEventListener('mousemove', this.handleRootMouseMove.bind(this));
     this.triggerElement.addEventListener('contextmenu', this.handleTriggerContextMenu.bind(this));
   }
 
@@ -462,10 +461,6 @@ export class ContextMenu extends Menu {
         return new DOMRect(clientX, clientY, 0, 0);
       },
     };
-  }
-
-  handleRootMouseMove(event) {
-    this.update(event);
   }
 
   handleTriggerContextMenu(event) {
