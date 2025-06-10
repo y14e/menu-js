@@ -231,12 +231,6 @@ export class Menu {
       if (this.triggerElement) {
         this.updatePopover();
       }
-      if (this.submenus.length) {
-        window.clearTimeout(this.submenuTimer);
-        this.submenus.forEach(submenu => {
-          submenu.close();
-        });
-      }
       Menu.menus
         .filter(menu => !menu.rootElement.contains(this.rootElement))
         .forEach(menu => {
@@ -493,6 +487,12 @@ export class Menu {
   }
 
   close(): void {
+    if (this.submenus.length) {
+      window.clearTimeout(this.submenuTimer);
+      this.submenus.forEach(submenu => {
+        submenu.close();
+      });
+    }
     if ((!this.isContextMenu && (!this.triggerElement || this.triggerElement.getAttribute('aria-expanded') !== 'true')) || (this.isContextMenu && !this.listElement.hasAttribute('data-context-menu-open'))) {
       return;
     }
