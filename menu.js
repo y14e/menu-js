@@ -144,9 +144,10 @@ export class Menu {
         if (!this.isFocusable(submenu.triggerElement)) {
           return;
         }
-        submenu.rootElement.addEventListener('pointerover', this.handleSubmenuPointerOver);
-        submenu.rootElement.addEventListener('pointerleave', this.handleSubmenuPointerLeave);
-        submenu.rootElement.addEventListener('click', this.handleSubmenuClick);
+        const root = submenu.rootElement;
+        root.addEventListener('pointerover', this.handleSubmenuPointerOver);
+        root.addEventListener('pointerleave', this.handleSubmenuPointerLeave);
+        root.addEventListener('click', this.handleSubmenuClick);
       });
     }
     this.resetTabIndex();
