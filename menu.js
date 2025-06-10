@@ -91,21 +91,19 @@ export class Menu {
     this.cleanupPopover = null;
     document.addEventListener('pointerdown', this.handleOutsidePointerDown.bind(this));
     this.rootElement.addEventListener('focusout', this.handleRootFocusOut.bind(this));
-    if (this.triggerElement) {
+    if (!this.isContextMenu && this.triggerElement) {
+      const id = Math.random().toString(36).slice(-8);
+      this.triggerElement.setAttribute('aria-controls', (this.listElement.id ||= `menu-list-${id}`));
+      this.triggerElement.setAttribute('aria-expanded', 'false');
+      this.triggerElement.setAttribute('aria-haspopup', 'menu');
+      this.triggerElement.setAttribute('id', this.triggerElement.getAttribute('id') || `menu-trigger-${id}`);
       this.triggerElement.setAttribute('tabindex', this.isFocusable(this.triggerElement) && !this.isSubmenu ? '0' : '-1');
-      this.triggerElement.addEventListener('keydown', this.handleTriggerKeyDown.bind(this));
-      if (!this.isContextMenu) {
-        const id = Math.random().toString(36).slice(-8);
-        this.triggerElement.setAttribute('aria-controls', (this.listElement.id ||= `menu-list-${id}`));
-        this.triggerElement.setAttribute('aria-expanded', 'false');
-        this.triggerElement.setAttribute('aria-haspopup', 'menu');
-        this.triggerElement.setAttribute('id', this.triggerElement.getAttribute('id') || `menu-trigger-${id}`);
-        if (!this.isFocusable(this.triggerElement)) {
-          this.triggerElement.style.setProperty('pointer-events', 'none');
-        }
-        this.triggerElement.addEventListener('click', this.handleTriggerClick.bind(this));
-        this.listElement.setAttribute('aria-labelledby', `${this.listElement.getAttribute('aria-labelledby') || ''} ${this.triggerElement.getAttribute('id')}`.trim());
+      if (!this.isFocusable(this.triggerElement)) {
+        this.triggerElement.style.setProperty('pointer-events', 'none');
       }
+      this.triggerElement.addEventListener('click', this.handleTriggerClick.bind(this));
+      this.triggerElement.addEventListener('keydown', this.handleTriggerKeyDown.bind(this));
+      this.listElement.setAttribute('aria-labelledby', `${this.listElement.getAttribute('aria-labelledby') || ''} ${this.triggerElement.getAttribute('id')}`.trim());
     }
     this.itemElements.forEach(item => {
       item.addEventListener('keydown', this.handleItemKeyDown.bind(this));
@@ -156,7 +154,7 @@ export class Menu {
     });
   }
 
-  toggle(open, shiftF10 = false) {
+  toggle(open) {
     if (this.triggerElement) {
       window.requestAnimationFrame(() => {
         if (!this.isContextMenu) {
@@ -176,14 +174,6 @@ export class Menu {
         opacity: '0',
       });
       if (this.triggerElement) {
-        if (this.isContextMenu && shiftF10) {
-          const { x, y } = this.triggerElement.getBoundingClientRect();
-          this.popoverReferenceElement = {
-            getBoundingClientRect() {
-              return new DOMRect(x, y, 0, 0);
-            },
-          };
-        }
         this.updatePopover();
       }
       if (this.submenus.length) {
@@ -261,7 +251,7 @@ export class Menu {
     };
     compute();
     if (!this.cleanupPopover) {
-      this.cleanupPopover = autoUpdate(this.triggerElement, this.listElement, compute);
+      this.cleanupPopover = autoUpdate(this.popoverReferenceElement, this.listElement, compute);
     }
   }
 
@@ -303,12 +293,11 @@ export class Menu {
   }
 
   handleTriggerKeyDown(event) {
-    const { shiftKey, key } = event;
-    const keys = ['Escape'];
+    const { key } = event;
+    const keys = ['Enter', 'Escape', ' ', 'ArrowUp', 'ArrowDown'];
     if (this.isSubmenu) {
       keys.push('ArrowRight');
     }
-    keys.push(...(!this.isContextMenu ? ['Enter', ' ', 'ArrowUp', 'ArrowDown'] : ['F10']));
     if (!keys.includes(key)) {
       return;
     }
@@ -317,10 +306,10 @@ export class Menu {
       this.close();
       return;
     }
-    if ((this.isSubmenu && key !== 'ArrowRight') || (this.isContextMenu && !(shiftKey && key === 'F10'))) {
+    if (this.isSubmenu && key !== 'ArrowRight') {
       return;
     }
-    this.open(true);
+    this.open();
     const focusables = this.itemElements.filter(this.isFocusable);
     const length = focusables.length;
     if (!length) {
@@ -441,11 +430,11 @@ export class Menu {
     });
   }
 
-  open(shiftF10 = false) {
+  open() {
     if ((!this.isContextMenu && (!this.triggerElement || this.triggerElement.getAttribute('aria-expanded') === 'true')) || (this.isContextMenu && this.listElement.hasAttribute('data-context-menu-open'))) {
       return;
     }
-    this.toggle(true, shiftF10);
+    this.toggle(true);
   }
 
   close() {
