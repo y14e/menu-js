@@ -91,19 +91,21 @@ export class Menu {
     this.cleanupPopover = null;
     document.addEventListener('pointerdown', this.handleOutsidePointerDown.bind(this));
     this.rootElement.addEventListener('focusout', this.handleRootFocusOut.bind(this));
-    if (!this.isContextMenu && this.triggerElement) {
-      const id = Math.random().toString(36).slice(-8);
-      this.triggerElement.setAttribute('aria-controls', (this.listElement.id ||= `menu-list-${id}`));
-      this.triggerElement.setAttribute('aria-expanded', 'false');
-      this.triggerElement.setAttribute('aria-haspopup', 'menu');
-      this.triggerElement.setAttribute('id', this.triggerElement.getAttribute('id') || `menu-trigger-${id}`);
+    if (this.triggerElement) {
       this.triggerElement.setAttribute('tabindex', this.isFocusable(this.triggerElement) && !this.isSubmenu ? '0' : '-1');
-      if (!this.isFocusable(this.triggerElement)) {
-        this.triggerElement.style.setProperty('pointer-events', 'none');
-      }
-      this.triggerElement.addEventListener('click', this.handleTriggerClick.bind(this));
       this.triggerElement.addEventListener('keydown', this.handleTriggerKeyDown.bind(this));
-      this.listElement.setAttribute('aria-labelledby', `${this.listElement.getAttribute('aria-labelledby') || ''} ${this.triggerElement.getAttribute('id')}`.trim());
+      if (!this.isContextMenu) {
+        const id = Math.random().toString(36).slice(-8);
+        this.triggerElement.setAttribute('aria-controls', (this.listElement.id ||= `menu-list-${id}`));
+        this.triggerElement.setAttribute('aria-expanded', 'false');
+        this.triggerElement.setAttribute('aria-haspopup', 'menu');
+        this.triggerElement.setAttribute('id', this.triggerElement.getAttribute('id') || `menu-trigger-${id}`);
+        if (!this.isFocusable(this.triggerElement)) {
+          this.triggerElement.style.setProperty('pointer-events', 'none');
+        }
+        this.triggerElement.addEventListener('click', this.handleTriggerClick.bind(this));
+        this.listElement.setAttribute('aria-labelledby', `${this.listElement.getAttribute('aria-labelledby') || ''} ${this.triggerElement.getAttribute('id')}`.trim());
+      }
     }
     this.itemElements.forEach(item => {
       item.addEventListener('keydown', this.handleItemKeyDown.bind(this));
@@ -154,7 +156,7 @@ export class Menu {
     });
   }
 
-  toggle(isOpen) {
+  toggle(isOpen, isShiftF10 = false) {
     if (this.triggerElement) {
       window.requestAnimationFrame(() => {
         if (!this.isContextMenu) {
@@ -173,6 +175,15 @@ export class Menu {
         display: 'block',
         opacity: '0',
       });
+      if (this.isContextMenu && isShiftF10) {
+        this.popoverReferenceElement = this.triggerElement;
+        this.updatePopover({
+          ...this.settings.popover.menu,
+          placement: undefined,
+        });
+      } else if (this.triggerElement) {
+        this.updatePopover();
+      }
       if (this.submenus.length) {
         window.clearTimeout(this.submenuTimer);
         this.submenus.forEach(submenu => {
@@ -184,9 +195,6 @@ export class Menu {
         .forEach(menu => {
           menu.close();
         });
-      if (this.triggerElement) {
-        this.updatePopover();
-      }
     } else if (this.triggerElement && this.rootElement.contains(document.activeElement)) {
       this.triggerElement.focus();
     }
@@ -220,9 +228,9 @@ export class Menu {
     }
   }
 
-  updatePopover() {
+  updatePopover(settings = this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu']) {
     const compute = () => {
-      computePosition(this.popoverReferenceElement, this.listElement, this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu']).then(({ x, y, placement }) => {
+      computePosition(this.popoverReferenceElement, this.listElement, settings).then(({ x, y, placement }) => {
         Object.assign(this.listElement.style, {
           left: `${x}px`,
           top: `${y}px`,
@@ -263,7 +271,7 @@ export class Menu {
   }
 
   handleRootFocusOut(event) {
-    if (!event.relatedTarget || this[!this.isContextMenu ? 'rootElement' : 'listElement'].contains(event.relatedTarget) || this.triggerElement?.getAttribute('aria-expanded') !== 'true') {
+    if (!event.relatedTarget || this.rootElement.contains(event.relatedTarget) || (!this.isContextMenu && this.triggerElement?.getAttribute('aria-expanded') !== 'true') || (!this.isContextMenu && this.listElement.hasAttribute('data-context-menu-open'))) {
       return;
     }
     if (this.triggerElement) {
@@ -293,11 +301,12 @@ export class Menu {
   }
 
   handleTriggerKeyDown(event) {
-    const { key } = event;
-    const keys = ['Enter', 'Escape', ' ', 'ArrowUp', 'ArrowDown'];
+    const { shiftKey, key } = event;
+    const keys = ['Escape'];
     if (this.isSubmenu) {
       keys.push('ArrowRight');
     }
+    keys.push(...(!this.isContextMenu ? ['Enter', ' ', 'ArrowUp', 'ArrowDown'] : ['F10']));
     if (!keys.includes(key)) {
       return;
     }
@@ -306,7 +315,10 @@ export class Menu {
       if (this.isSubmenu && key !== 'ArrowRight') {
         return;
       }
-      this.open();
+      if (this.isContextMenu && (!shiftKey || key !== 'F10')) {
+        return;
+      }
+      this.open(true);
       const focusables = this.itemElements.filter(this.isFocusable);
       const length = focusables.length;
       if (!length) {
@@ -314,7 +326,7 @@ export class Menu {
       }
       window.requestAnimationFrame(() => {
         window.requestAnimationFrame(() => {
-          focusables[key !== 'ArrowUp' ? 0 : length - 1].focus();
+          focusables[this.isContextMenu || key !== 'ArrowUp' ? 0 : length - 1].focus();
         });
       });
       return;
@@ -430,11 +442,11 @@ export class Menu {
     });
   }
 
-  open() {
+  open(isShiftF10 = false) {
     if ((!this.isContextMenu && (!this.triggerElement || this.triggerElement.getAttribute('aria-expanded') === 'true')) || (this.isContextMenu && this.listElement.hasAttribute('data-context-menu-open'))) {
       return;
     }
-    this.toggle(true);
+    this.toggle(true, isShiftF10);
   }
 
   close() {
@@ -448,24 +460,38 @@ export class Menu {
 export class ContextMenu extends Menu {
   constructor(root, options) {
     super(root, options, false, true);
+    this.longPressTimer = 0;
+    this.triggerElement.addEventListener('pointerdown', this.handleTriggerPointerDown.bind(this));
+    ['pointercancel', 'pointerleave', 'pointerup'].forEach(name => {
+      this.triggerElement.addEventListener(name, this.handleTriggerLongPressCancel.bind(this));
+    });
     this.triggerElement.addEventListener('contextmenu', this.handleTriggerContextMenu.bind(this));
   }
 
-  update(event) {
-    if (this.listElement.hasAttribute('data-context-menu-open')) {
+  handleTriggerPointerDown(event) {
+    if (event.pointerType === 'mouse') {
       return;
     }
-    const { clientX, clientY } = event;
-    this.popoverReferenceElement = {
-      getBoundingClientRect() {
-        return new DOMRect(clientX, clientY, 0, 0);
-      },
-    };
+    this.longPressTimer = window.setTimeout(() => {
+      this.handleTriggerContextMenu(event);
+    }, 500);
+  }
+
+  handleTriggerLongPressCancel() {
+    window.clearTimeout(this.longPressTimer);
   }
 
   handleTriggerContextMenu(event) {
     event.preventDefault();
-    this.update(event);
+    if (this.listElement.hasAttribute('data-context-menu-open')) {
+      return;
+    }
+    const { clientX: x, clientY: y } = event;
+    this.popoverReferenceElement = {
+      getBoundingClientRect() {
+        return new DOMRect(x, y, 0, 0);
+      },
+    };
     super.open();
   }
 }
