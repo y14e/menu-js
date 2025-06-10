@@ -216,10 +216,10 @@ export class Menu {
       });
       if (this.triggerElement) {
         if (this.isContextMenu && isShiftF10) {
-          const rect = this.triggerElement.getBoundingClientRect();
+          const { x, y } = this.triggerElement.getBoundingClientRect();
           this.popoverReferenceElement = {
             getBoundingClientRect() {
-              return new DOMRect(rect.left, rect.top, 0, 0);
+              return new DOMRect(x, y, 0, 0);
             },
           };
         }
