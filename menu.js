@@ -3,7 +3,7 @@ import { autoUpdate, computePosition, flip, offset, shift } from 'https://cdn.js
 export class Menu {
   static menus = [];
 
-  constructor(root, options, isSubmenu = false, isContextMenu = false) {
+  constructor(root, options, submenu = false, contextMenu = false) {
     this.rootElement = root;
     this.defaults = {
       selector: {
@@ -54,8 +54,8 @@ export class Menu {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       this.settings.animation.duration = 0;
     }
-    this.isSubmenu = isSubmenu;
-    this.isContextMenu = isContextMenu;
+    this.isSubmenu = submenu;
+    this.isContextMenu = contextMenu;
     this.triggerElement = this.rootElement.querySelector(this.settings.selector[!this.isSubmenu ? 'trigger' : 'item']);
     this.listElement = this.rootElement.querySelector(this.settings.selector.list);
     this.itemElements = [...this.listElement.querySelectorAll(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} *)`)];
@@ -156,13 +156,13 @@ export class Menu {
     });
   }
 
-  toggle(isOpen, isShiftF10 = false) {
+  toggle(open, shiftF10 = false) {
     if (this.triggerElement) {
       window.requestAnimationFrame(() => {
         if (!this.isContextMenu) {
-          this.triggerElement.setAttribute('aria-expanded', String(isOpen));
+          this.triggerElement.setAttribute('aria-expanded', String(open));
         } else {
-          if (isOpen) {
+          if (open) {
             this.listElement.setAttribute('data-context-menu-open', '');
           } else {
             this.listElement.removeAttribute('data-context-menu-open');
@@ -170,13 +170,13 @@ export class Menu {
         }
       });
     }
-    if (isOpen) {
+    if (open) {
       Object.assign(this.listElement.style, {
         display: 'block',
         opacity: '0',
       });
       if (this.triggerElement) {
-        if (this.isContextMenu && isShiftF10) {
+        if (this.isContextMenu && shiftF10) {
           const { x, y } = this.triggerElement.getBoundingClientRect();
           this.popoverReferenceElement = {
             getBoundingClientRect() {
@@ -206,7 +206,7 @@ export class Menu {
     }
     this.animation = this.listElement.animate(
       {
-        opacity: isOpen ? [opacity, '1'] : [opacity, '0'],
+        opacity: open ? [opacity, '1'] : [opacity, '0'],
       },
       {
         duration: this.settings.animation.duration,
@@ -215,7 +215,7 @@ export class Menu {
     );
     this.animation.addEventListener('finish', () => {
       this.animation = null;
-      if (!isOpen) {
+      if (!open) {
         this.listElement.removeAttribute('data-menu-placement');
         this.listElement.style.setProperty('display', 'none');
         if (this.settings.popover.transformOrigin) {
@@ -224,7 +224,7 @@ export class Menu {
       }
       this.listElement.style.removeProperty('opacity');
     });
-    if (!isOpen && this.cleanupPopover) {
+    if (!open && this.cleanupPopover) {
       this.cleanupPopover();
       this.cleanupPopover = null;
     }
@@ -285,15 +285,15 @@ export class Menu {
 
   handleTriggerClick(event) {
     event.preventDefault();
-    const isOpen = this.triggerElement.getAttribute('aria-expanded') === 'true' || this.listElement.hasAttribute('data-context-menu-open');
+    const open = this.triggerElement.getAttribute('aria-expanded') === 'true' || this.listElement.hasAttribute('data-context-menu-open');
     if (!this.isSubmenu || event.pointerType !== 'mouse') {
-      this.toggle(!isOpen);
+      this.toggle(!open);
     }
     const focusables = this.itemElements.filter(this.isFocusable);
     if (!focusables.length) {
       return;
     }
-    if (!isOpen) {
+    if (!open) {
       window.requestAnimationFrame(() => {
         window.requestAnimationFrame(() => {
           focusables[0].focus();
@@ -313,27 +313,24 @@ export class Menu {
       return;
     }
     event.preventDefault();
-    if (!['Escape'].includes(key)) {
-      if (this.isSubmenu && key !== 'ArrowRight') {
-        return;
-      }
-      if (this.isContextMenu && (!shiftKey || key !== 'F10')) {
-        return;
-      }
-      this.open(true);
-      const focusables = this.itemElements.filter(this.isFocusable);
-      const length = focusables.length;
-      if (!length) {
-        return;
-      }
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => {
-          focusables[this.isContextMenu || key !== 'ArrowUp' ? 0 : length - 1].focus();
-        });
-      });
+    if (['Escape'].includes(key)) {
+      this.close();
       return;
     }
-    this.close();
+    if ((this.isSubmenu && key !== 'ArrowRight') || (this.isContextMenu && !(shiftKey && key === 'F10'))) {
+      return;
+    }
+    this.open(true);
+    const focusables = this.itemElements.filter(this.isFocusable);
+    const length = focusables.length;
+    if (!length) {
+      return;
+    }
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        focusables[this.isContextMenu || key !== 'ArrowUp' ? 0 : length - 1].focus();
+      });
+    });
   }
 
   handleItemPointerOver(event) {
@@ -351,7 +348,7 @@ export class Menu {
     if (this.isSubmenu) {
       keys.push('ArrowLeft');
     }
-    if (!keys.includes(key) && (!shiftKey || key !== 'Tab') && (!/^\S$/i.test(key) || !this.itemElementsByInitial[key.toLowerCase()]?.filter(this.isFocusable).length)) {
+    if (!keys.includes(key) && !(shiftKey && key === 'Tab') && !(/^\S$/i.test(key) && this.itemElementsByInitial[key.toLowerCase()]?.filter(this.isFocusable).length)) {
       return;
     }
     event.stopPropagation();
@@ -444,11 +441,11 @@ export class Menu {
     });
   }
 
-  open(isShiftF10 = false) {
+  open(shiftF10 = false) {
     if ((!this.isContextMenu && (!this.triggerElement || this.triggerElement.getAttribute('aria-expanded') === 'true')) || (this.isContextMenu && this.listElement.hasAttribute('data-context-menu-open'))) {
       return;
     }
-    this.toggle(true, isShiftF10);
+    this.toggle(true, shiftF10);
   }
 
   close() {
