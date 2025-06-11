@@ -222,6 +222,14 @@ export class Menu {
         .forEach(menu => {
           menu.close();
         });
+      const focusables = this.itemElements.filter(this.isFocusable);
+      if (focusables.length) {
+        window.requestAnimationFrame(() => {
+          window.requestAnimationFrame(() => {
+            focusables[0].focus();
+          });
+        });
+      }
     } else {
       if (this.submenus.length) {
         window.clearTimeout(this.submenuTimer);
@@ -321,17 +329,6 @@ export class Menu {
       const open = this.triggerElement.ariaExpanded === 'true' || this.listElement.hasAttribute('data-context-menu-open');
       if (!this.isSubmenu || (event instanceof PointerEvent && event.pointerType !== 'mouse')) {
         this.toggle(!open);
-      }
-      const focusables = this.itemElements.filter(this.isFocusable);
-      if (!focusables.length) {
-        return;
-      }
-      if (!open) {
-        window.requestAnimationFrame(() => {
-          window.requestAnimationFrame(() => {
-            focusables[0].focus();
-          });
-        });
       }
       return;
     }
