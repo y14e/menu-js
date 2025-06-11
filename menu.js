@@ -157,7 +157,7 @@ export class Menu {
   }
 
   toggle(open) {
-    if ((open && !this.isContextMenu && (!this.triggerElement || this.triggerElement.ariaExpanded === 'true')) || (this.isContextMenu && this.listElement.hasAttribute('data-context-menu-open')) || (!open && !this.isContextMenu && (!this.triggerElement || this.triggerElement.ariaExpanded === 'false')) || (this.isContextMenu && !this.listElement.hasAttribute('data-context-menu-open'))) {
+    if ((open && ((!this.isContextMenu && (!this.triggerElement || this.triggerElement.ariaExpanded === 'true')) || (this.isContextMenu && this.listElement.hasAttribute('data-context-menu-open')))) || (!open && ((!this.isContextMenu && (!this.triggerElement || this.triggerElement.ariaExpanded === 'false')) || (this.isContextMenu && !this.listElement.hasAttribute('data-context-menu-open'))))) {
       return;
     }
     if (this.triggerElement) {
