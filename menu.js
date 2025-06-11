@@ -64,7 +64,7 @@ export class Menu {
       this.itemElements.forEach(item => {
         const initial = item.textContent.trim().charAt(0).toLowerCase();
         if (/\S/.test(initial)) {
-          item.ariaKeyShortcuts = initial;
+          item.ariaKeyshortcuts = initial;
           (this.itemElementsByInitial[initial] ||= []).push(item);
         }
       });
@@ -295,15 +295,8 @@ export class Menu {
         });
       }
       return;
-    } else if (this.submenus.length) {
-      this.submenus.forEach(submenu => {
-        if (submenu.rootElement === event.currentTarget) {
-          submenu.open();
-        } else {
-          submenu.close();
-        }
-      });
     }
+    this.toggle(this.triggerElement === event.currentTarget);
   }
 
   handleTriggerKeyDown(event) {
