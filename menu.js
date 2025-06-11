@@ -64,7 +64,7 @@ export class Menu {
       this.itemElements.forEach(item => {
         const initial = item.textContent.trim().charAt(0).toLowerCase();
         if (/\S/.test(initial)) {
-          item.ariaKeyshortcuts = initial;
+          item.ariaKeyShortcuts = initial;
           (this.itemElementsByInitial[initial] ||= []).push(item);
         }
       });
