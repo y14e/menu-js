@@ -157,6 +157,9 @@ export class Menu {
   }
 
   toggle(open) {
+    if ((open && !this.isContextMenu && (!this.triggerElement || this.triggerElement.ariaExpanded === 'true')) || (this.isContextMenu && this.listElement.hasAttribute('data-context-menu-open')) || (!open && !this.isContextMenu && (!this.triggerElement || this.triggerElement.ariaExpanded === 'false')) || (this.isContextMenu && !this.listElement.hasAttribute('data-context-menu-open'))) {
+      return;
+    }
     if (this.triggerElement) {
       window.requestAnimationFrame(() => {
         if (!this.isContextMenu) {
@@ -420,16 +423,10 @@ export class Menu {
   }
 
   open() {
-    if ((!this.isContextMenu && (!this.triggerElement || this.triggerElement.ariaExpanded === 'true')) || (this.isContextMenu && this.listElement.hasAttribute('data-context-menu-open'))) {
-      return;
-    }
     this.toggle(true);
   }
 
   close() {
-    if ((!this.isContextMenu && (!this.triggerElement || this.triggerElement.ariaExpanded === 'false')) || (this.isContextMenu && !this.listElement.hasAttribute('data-context-menu-open'))) {
-      return;
-    }
     this.toggle(false);
   }
 }
