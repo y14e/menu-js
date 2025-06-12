@@ -110,7 +110,7 @@ export class Menu {
       const id = Math.random().toString(36).slice(-8);
       this.triggerElement.setAttribute('aria-controls', (this.listElement.id ||= `menu-list-${id}`));
       this.triggerElement.ariaExpanded = 'false';
-      this.triggerElement.ariaHasPopup = 'menu';
+      this.triggerElement.ariaHasPopup = 'true';
       this.triggerElement.id ||= `menu-trigger-${id}`;
       this.triggerElement.tabIndex = this.isFocusable(this.triggerElement) && !this.isSubmenu ? 0 : -1;
       if (!this.isFocusable(this.triggerElement)) {
