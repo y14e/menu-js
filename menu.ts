@@ -43,6 +43,7 @@ export class Menu {
   private cleanupPopover!: Function | null;
 
   constructor(root: HTMLElement, options?: Partial<MenuOptions>, submenu = false, contextMenu = false) {
+    Menu.menus.push(this);
     this.rootElement = root;
     this.defaults = {
       selector: {
@@ -179,11 +180,9 @@ export class Menu {
       });
     }
     this.resetTabIndex();
-    if (this.isSubmenu) {
-      return;
+    if (!this.isSubmenu) {
+      this.rootElement.setAttribute('data-menu-initialized', '');
     }
-    Menu.menus.push(this);
-    this.rootElement.setAttribute('data-menu-initialized', '');
   }
 
   private isFocusable(element: HTMLElement): boolean {
@@ -196,7 +195,7 @@ export class Menu {
   }
 
   private toggle(open: boolean): void {
-    if ((open && ((!this.isContextMenu && (!this.triggerElement || this.triggerElement.ariaExpanded === 'true')) || (this.isContextMenu && this.listElement.hasAttribute('data-context-menu-open')))) || (!open && ((!this.isContextMenu && (!this.triggerElement || this.triggerElement.ariaExpanded === 'false')) || (this.isContextMenu && !this.listElement.hasAttribute('data-context-menu-open'))))) {
+    if (open.toString() === this.triggerElement?.ariaExpanded || (!this.isContextMenu && open === (this.triggerElement?.ariaExpanded === 'true')) || (this.isContextMenu && open === this.listElement.hasAttribute('data-context-menu-open'))) {
       return;
     }
     if (this.triggerElement) {
@@ -213,6 +212,11 @@ export class Menu {
       });
     }
     if (open) {
+      Menu.menus
+        .filter(menu => !menu.rootElement.contains(this.rootElement))
+        .forEach(menu => {
+          menu.close();
+        });
       Object.assign(this.listElement.style, {
         display: 'block',
         opacity: '0',
@@ -220,11 +224,6 @@ export class Menu {
       if (this.triggerElement) {
         this.updatePopover();
       }
-      Menu.menus
-        .filter(menu => !menu.rootElement.contains(this.rootElement))
-        .forEach(menu => {
-          menu.close();
-        });
       const focusables = this.itemElements.filter(this.isFocusable);
       if (focusables.length) {
         window.requestAnimationFrame(() => {
@@ -333,30 +332,42 @@ export class Menu {
       if (!this.isSubmenu || (event instanceof PointerEvent && event.pointerType !== 'mouse')) {
         this.toggle(!open);
       }
-      return;
+    } else {
+      this.toggle(this.triggerElement === event.currentTarget);
     }
-    this.toggle(this.triggerElement === event.currentTarget);
   }
 
   private handleTriggerKeyDown(event: KeyboardEvent): void {
     const { key } = event;
-    if (!['Enter', 'Escape', ' ', ...(!this.isSubmenu ? ['ArrowUp', 'ArrowDown'] : ['ArrowRight'])].includes(key)) {
+    if (!['Enter', ' ', ...(!this.isSubmenu ? ['ArrowUp', 'ArrowDown'] : ['ArrowRight'])].includes(key)) {
       return;
     }
     event.preventDefault();
-    if (['Escape'].includes(key)) {
-      this.close();
-      return;
-    }
+    event.stopPropagation();
     this.open();
     const focusables = this.itemElements.filter(this.isFocusable);
     const length = focusables.length;
     if (!length) {
       return;
     }
+    let index: number;
+    switch (key) {
+      case 'Enter':
+      case ' ':
+        this.triggerElement.click();
+        return;
+      case 'ArrowUp':
+        index = length - 1;
+        break;
+      case 'ArrowRight':
+        return;
+      case 'ArrowDown':
+        index = 0;
+        break;
+    }
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
-        focusables[this.isContextMenu || key !== 'ArrowUp' ? 0 : length - 1].focus();
+        focusables[index].focus();
       });
     });
   }
@@ -380,41 +391,42 @@ export class Menu {
       event.stopPropagation();
     }
     event.preventDefault();
-    const current = document.activeElement as HTMLElement;
-    if (['Enter', ' '].includes(key)) {
-      current.click();
-      return;
-    }
-    if (['Tab', 'Escape', 'ArrowLeft'].includes(key)) {
-      this.close();
-      return;
-    }
     const focusables = this.itemElements.filter(this.isFocusable);
+    const current = document.activeElement as HTMLElement;
     const currentIndex = focusables.indexOf(current);
+    if (currentIndex === -1) {
+      return;
+    }
     focusables[currentIndex].tabIndex = -1;
-    let targetFocusables: HTMLElement[];
-    let newIndex!: number;
-    if (['End', 'Home', 'ArrowUp', 'ArrowDown'].includes(key)) {
-      targetFocusables = focusables;
-      const length = focusables.length;
-      switch (key) {
-        case 'End':
-          newIndex = length - 1;
-          break;
-        case 'Home':
-          newIndex = 0;
-          break;
-        case 'ArrowUp':
-          newIndex = (currentIndex - 1 + length) % length;
-          break;
-        case 'ArrowDown':
-          newIndex = (currentIndex + 1) % length;
-          break;
-      }
-    } else {
-      targetFocusables = this.itemElementsByInitial[key.toLowerCase()].filter(this.isFocusable);
-      const foundIndex = targetFocusables.findIndex(focusable => focusables.indexOf(focusable) > currentIndex);
-      newIndex = foundIndex !== -1 ? foundIndex : 0;
+    const length = focusables.length;
+    let newIndex: number;
+    let targetFocusables = focusables;
+    switch (key) {
+      case 'Tab':
+      case 'Escape':
+      case 'ArrowLeft':
+        this.close();
+        return;
+      case 'Enter':
+      case ' ':
+        current.click();
+        return;
+      case 'End':
+        newIndex = length - 1;
+        break;
+      case 'Home':
+        newIndex = 0;
+        break;
+      case 'ArrowUp':
+        newIndex = (currentIndex - 1 + length) % length;
+        break;
+      case 'ArrowDown':
+        newIndex = (currentIndex + 1) % length;
+        break;
+      default:
+        targetFocusables = this.itemElementsByInitial[key.toLowerCase()].filter(this.isFocusable);
+        const foundIndex = targetFocusables.findIndex(focusable => focusables.indexOf(focusable) > currentIndex);
+        newIndex = foundIndex !== -1 ? foundIndex : 0;
     }
     const focusable = targetFocusables[newIndex];
     focusable.tabIndex = 0;
