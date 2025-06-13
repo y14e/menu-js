@@ -195,7 +195,12 @@ export class Menu {
   }
 
   private toggle(open: boolean): void {
-    if (open.toString() === this.triggerElement?.ariaExpanded || (!this.isContextMenu && open === (this.triggerElement?.ariaExpanded === 'true')) || (this.isContextMenu && open === this.listElement.hasAttribute('data-context-menu-open'))) {
+    // prettier-ignore
+    if (
+      open.toString() === this.triggerElement?.ariaExpanded
+      || (!this.isContextMenu && open === (this.triggerElement?.ariaExpanded === 'true'))
+      || (this.isContextMenu && open === this.listElement.hasAttribute('data-context-menu-open'))
+    ) {
       return;
     }
     if (this.triggerElement) {
@@ -224,11 +229,11 @@ export class Menu {
       if (this.triggerElement) {
         this.updatePopover();
       }
-      const focusables = this.itemElements.filter(this.isFocusable);
-      if (focusables.length) {
+      const focusable = this.itemElements.find(this.isFocusable);
+      if (focusable) {
         window.requestAnimationFrame(() => {
           window.requestAnimationFrame(() => {
-            focusables[0].focus();
+            focusable.focus();
           });
         });
       }
@@ -316,7 +321,13 @@ export class Menu {
   }
 
   private handleRootFocusOut(event: FocusEvent): void {
-    if (!event.relatedTarget || this.rootElement.contains(event.relatedTarget as HTMLElement) || (!this.isContextMenu && !!this.triggerElement && this.triggerElement.ariaExpanded === 'false') || (!this.isContextMenu && this.listElement.hasAttribute('data-context-menu-open'))) {
+    const target = event.relatedTarget as HTMLElement;
+    // prettier-ignore
+    if (
+      !target
+      || this.rootElement.contains(target)
+      || (!this.isContextMenu && (this.triggerElement?.ariaExpanded === 'false' || this.listElement.hasAttribute('data-context-menu-open')))
+    ) {
       return;
     }
     this.resetTabIndex();
@@ -381,7 +392,12 @@ export class Menu {
     if (this.isSubmenu) {
       keys.push('ArrowLeft');
     }
-    if (!keys.includes(key) && !(shiftKey && key === 'Tab') && !(/^\S$/i.test(key) && this.itemElementsByInitial[key.toLowerCase()]?.filter(this.isFocusable).length)) {
+    // prettier-ignore
+    if (
+      !keys.includes(key)
+      && !(shiftKey && key === 'Tab')
+      && !(/^\S$/i.test(key) && this.itemElementsByInitial[key.toLowerCase()]?.find(this.isFocusable))
+    ) {
       return;
     }
     if (!shiftKey) {
