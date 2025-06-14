@@ -43,7 +43,9 @@ export class Menu {
   private cleanupPopover!: Function | null;
 
   constructor(root: HTMLElement, options?: Partial<MenuOptions>, submenu = false, contextMenu = false) {
-    Menu.menus.push(this);
+    if (!root) {
+      return;
+    }
     this.rootElement = root;
     this.defaults = {
       selector: {
@@ -70,25 +72,13 @@ export class Menu {
     this.settings = {
       ...this.defaults,
       ...options,
-      selector: {
-        ...this.defaults.selector,
-        ...options?.selector,
-      },
-      animation: {
-        ...this.defaults.animation,
-        ...options?.animation,
-      },
+      selector: { ...this.defaults.selector, ...options?.selector },
+      animation: { ...this.defaults.animation, ...options?.animation },
       popover: {
         ...this.defaults.popover,
         ...options?.popover,
-        menu: {
-          ...this.defaults.popover.menu,
-          ...options?.popover?.menu,
-        },
-        submenu: {
-          ...this.defaults.popover.submenu,
-          ...options?.popover?.submenu,
-        },
+        menu: { ...this.defaults.popover.menu, ...options?.popover?.menu },
+        submenu: { ...this.defaults.popover.submenu, ...options?.popover?.submenu },
       },
     };
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -174,19 +164,16 @@ export class Menu {
       item.addEventListener('pointerover', this.handleItemPointerOver);
     });
     if (this.checkboxItemElements.length) {
-      this.checkboxItemElements.forEach(item => {
-        item.addEventListener('click', this.handleCheckboxItemClick);
-      });
+      this.checkboxItemElements.forEach(item => item.addEventListener('click', this.handleCheckboxItemClick));
     }
     if (this.radioItemElements.length) {
-      this.radioItemElements.forEach(item => {
-        item.addEventListener('click', this.handleRadioItemClick);
-      });
+      this.radioItemElements.forEach(item => item.addEventListener('click', this.handleRadioItemClick));
     }
     this.resetTabIndex();
     if (!this.isSubmenu) {
       this.rootElement.setAttribute('data-menu-initialized', '');
     }
+    Menu.menus.push(this);
   }
 
   private isFocusable(element: HTMLElement): boolean {
@@ -225,11 +212,7 @@ export class Menu {
       });
     }
     if (open) {
-      Menu.menus
-        .filter(menu => !menu.rootElement.contains(this.rootElement))
-        .forEach(menu => {
-          menu.close();
-        });
+      Menu.menus.filter(menu => !menu.rootElement.contains(this.rootElement)).forEach(menu => menu.close());
       Object.assign(this.listElement.style, {
         display: 'block',
         opacity: '0',
@@ -248,9 +231,7 @@ export class Menu {
     } else {
       if (this.submenus.length) {
         window.clearTimeout(this.submenuTimer);
-        this.submenus.forEach(submenu => {
-          submenu.close();
-        });
+        this.submenus.forEach(submenu => submenu.close());
       }
       if (this.triggerElement && this.rootElement.contains(document.activeElement)) {
         this.triggerElement.focus();
@@ -415,12 +396,16 @@ export class Menu {
     }
     event.preventDefault();
     const focusables = this.itemElements.filter(this.isFocusable);
-    const current = document.activeElement as HTMLElement;
+    const length = focusables.length;
+    const active = document.activeElement;
+    const current = active instanceof HTMLElement ? active : null;
+    if (!current) {
+      return;
+    }
     const currentIndex = focusables.indexOf(current);
     if (currentIndex === -1) {
       return;
     }
-    const length = focusables.length;
     let newIndex: number;
     let targetFocusables = focusables;
     switch (key) {
@@ -523,9 +508,7 @@ export class ContextMenu extends Menu {
     this.handleTriggerLongPressCancel = this.handleTriggerLongPressCancel.bind(this);
     this.handleTriggerPointerDown = this.handleTriggerPointerDown.bind(this);
     this.triggerElement.addEventListener('contextmenu', this.handleTriggerContextMenu);
-    ['pointercancel', 'pointerleave', 'pointerup'].forEach(name => {
-      this.triggerElement.addEventListener(name, this.handleTriggerLongPressCancel);
-    });
+    ['pointercancel', 'pointerleave', 'pointerup'].forEach(name => this.triggerElement.addEventListener(name, this.handleTriggerLongPressCancel));
     this.triggerElement.addEventListener('pointerdown', this.handleTriggerPointerDown);
   }
 
