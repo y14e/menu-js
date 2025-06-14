@@ -519,9 +519,7 @@ export class ContextMenu extends Menu {
     }
     const { clientX: x, clientY: y } = event;
     this.popoverReferenceElement = {
-      getBoundingClientRect() {
-        return new DOMRect(x, y, 0, 0);
-      },
+      getBoundingClientRect: () => new DOMRect(x, y, 0, 0),
     };
     super.open();
   }
