@@ -133,6 +133,8 @@ export class Menu {
     this.handleTriggerClick = this.handleTriggerClick.bind(this);
     this.handleTriggerKeyDown = this.handleTriggerKeyDown.bind(this);
     this.handleListKeyDown = this.handleListKeyDown.bind(this);
+    this.handleItemFocusIn = this.handleItemFocusIn.bind(this);
+    this.handleItemFocusOut = this.handleItemFocusOut.bind(this);
     this.handleItemPointerLeave = this.handleItemPointerLeave.bind(this);
     this.handleItemPointerOver = this.handleItemPointerOver.bind(this);
     this.handleCheckboxItemClick = this.handleCheckboxItemClick.bind(this);
@@ -166,6 +168,8 @@ export class Menu {
       if (root.querySelector(this.settings.selector.list)) {
         this.submenus.push(new Menu(root, this.settings, true));
       }
+      item.addEventListener('focusin', this.handleItemFocusIn);
+      item.addEventListener('focusout', this.handleItemFocusOut);
       item.addEventListener('pointerleave', this.handleItemPointerLeave);
       item.addEventListener('pointerover', this.handleItemPointerOver);
     });
@@ -190,8 +194,16 @@ export class Menu {
   }
 
   private resetTabIndex(): void {
-    const focusable = this.itemElements.find(item => this.isFocusable(item));
-    this.itemElements.forEach(item => (item.tabIndex = item === focusable ? 0 : -1));
+    if (this.triggerElement) {
+      this.itemElements.forEach(item => {
+        item.tabIndex = -1;
+      });
+    } else {
+      const focusable = this.itemElements.find(item => this.isFocusable(item));
+      this.itemElements.forEach(item => {
+        item.tabIndex = item === focusable ? 0 : -1;
+      });
+    }
   }
 
   private toggle(open: boolean): void {
@@ -330,7 +342,6 @@ export class Menu {
     ) {
       return;
     }
-    this.resetTabIndex();
     if (this.triggerElement) {
       this.close();
     }
@@ -413,7 +424,6 @@ export class Menu {
     if (currentIndex === -1) {
       return;
     }
-    focusables[currentIndex].tabIndex = -1;
     const length = focusables.length;
     let newIndex: number;
     let targetFocusables = focusables;
@@ -444,9 +454,18 @@ export class Menu {
         const foundIndex = targetFocusables.findIndex(focusable => focusables.indexOf(focusable) > currentIndex);
         newIndex = foundIndex !== -1 ? foundIndex : 0;
     }
-    const focusable = targetFocusables[newIndex];
-    focusable.tabIndex = 0;
-    focusable.focus();
+    targetFocusables[newIndex].focus();
+  }
+
+  private handleItemFocusIn(event: FocusEvent): void {
+    const target = event.currentTarget;
+    this.itemElements.forEach(item => {
+      item.tabIndex = item === target ? 0 : -1;
+    });
+  }
+
+  private handleItemFocusOut() {
+    this.resetTabIndex();
   }
 
   private handleItemPointerLeave(): void {
