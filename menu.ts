@@ -507,11 +507,11 @@ export class ContextMenu extends Menu {
     this.handleTriggerContextMenu = this.handleTriggerContextMenu.bind(this);
     this.handleTriggerLongPressCancel = this.handleTriggerLongPressCancel.bind(this);
     this.handleTriggerPointerDown = this.handleTriggerPointerDown.bind(this);
-    this.triggerElement.addEventListener('pointerdown', this.handleTriggerPointerDown);
+    this.triggerElement.addEventListener('contextmenu', this.handleTriggerContextMenu);
     ['pointercancel', 'pointerleave', 'pointerup'].forEach(name => {
       this.triggerElement.addEventListener(name, this.handleTriggerLongPressCancel);
     });
-    this.triggerElement.addEventListener('contextmenu', this.handleTriggerContextMenu);
+    this.triggerElement.addEventListener('pointerdown', this.handleTriggerPointerDown);
   }
 
   private handleTriggerContextMenu(event: MouseEvent): void {
@@ -533,11 +533,10 @@ export class ContextMenu extends Menu {
   }
 
   private handleTriggerPointerDown(event: PointerEvent): void {
-    /*
     if (event.pointerType === 'mouse') {
       return;
     }
-    */
+    event.preventDefault();
     this.longPressTimer = window.setTimeout(() => {
       this.handleTriggerContextMenu(event);
     }, 500);
