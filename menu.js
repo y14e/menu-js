@@ -181,11 +181,7 @@ export class Menu {
         if (!this.isContextMenu) {
           this.triggerElement.ariaExpanded = String(open);
         } else {
-          if (open) {
-            this.listElement.setAttribute('data-context-menu-open', '');
-          } else {
-            this.listElement.removeAttribute('data-context-menu-open');
-          }
+          this.listElement.toggleAttribute('data-context-menu-open', open);
         }
       });
     }
