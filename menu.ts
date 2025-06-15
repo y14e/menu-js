@@ -1,4 +1,4 @@
-import { Middleware, Placement, VirtualElement, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
+import { Middleware, Placement, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
 
 type MenuOptions = {
   selector: {
@@ -27,7 +27,6 @@ export class Menu {
   private defaults!: MenuOptions;
   private settings!: MenuOptions;
   private isSubmenu!: boolean;
-  private isContextMenu!: boolean;
   protected triggerElement!: HTMLElement;
   protected listElement!: HTMLElement;
   private itemElements!: HTMLElement[];
@@ -39,10 +38,9 @@ export class Menu {
   private submenus!: Menu[];
   private submenuTimer!: number;
   private static menus: Menu[] = [];
-  protected popoverReferenceElement!: Element | VirtualElement;
   private cleanupPopover!: Function | null;
 
-  constructor(root: HTMLElement, options?: Partial<MenuOptions>, submenu = false, contextMenu = false) {
+  constructor(root: HTMLElement, options?: Partial<MenuOptions>, submenu = false) {
     if (!root) {
       return;
     }
@@ -85,7 +83,6 @@ export class Menu {
       this.settings.animation.duration = 0;
     }
     this.isSubmenu = submenu;
-    this.isContextMenu = contextMenu;
     this.triggerElement = this.rootElement.querySelector(this.settings.selector[!this.isSubmenu ? 'trigger' : 'item']) as HTMLElement;
     this.listElement = this.rootElement.querySelector(this.settings.selector.list) as HTMLElement;
     this.itemElements = [...this.listElement.querySelectorAll(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} *)`)] as HTMLElement[];
@@ -114,9 +111,6 @@ export class Menu {
     this.animation = null;
     this.submenus = [];
     this.submenuTimer = 0;
-    if (!this.isContextMenu) {
-      this.popoverReferenceElement = this.triggerElement;
-    }
     this.cleanupPopover = null;
     this.handleOutsidePointerDown = this.handleOutsidePointerDown.bind(this);
     this.handleRootFocusIn = this.handleRootFocusIn.bind(this);
@@ -134,13 +128,13 @@ export class Menu {
   }
 
   private initialize(): void {
-    if ((this.isContextMenu && !this.triggerElement) || !this.listElement || !this.itemElements.length) {
+    if (!this.listElement || !this.itemElements.length) {
       return;
     }
     document.addEventListener('pointerdown', this.handleOutsidePointerDown);
     this.rootElement.addEventListener('focusin', this.handleRootFocusIn);
     this.rootElement.addEventListener('focusout', this.handleRootFocusOut);
-    if (!this.isContextMenu && this.triggerElement) {
+    if (this.triggerElement) {
       const id = Math.random().toString(36).slice(-8);
       this.triggerElement.setAttribute('aria-controls', (this.listElement.id ||= `menu-list-${id}`));
       this.triggerElement.ariaExpanded = 'false';
@@ -196,21 +190,12 @@ export class Menu {
   }
 
   private toggle(open: boolean): void {
-    // prettier-ignore
-    if (
-      open.toString() === this.triggerElement?.ariaExpanded
-      || (!this.isContextMenu && open.toString() === this.triggerElement?.ariaExpanded)
-      || (this.isContextMenu && open === this.listElement.hasAttribute('data-context-menu-open'))
-    ) {
+    if (open.toString() === this.triggerElement?.ariaExpanded) {
       return;
     }
     if (this.triggerElement) {
       window.requestAnimationFrame(() => {
-        if (!this.isContextMenu) {
-          this.triggerElement.ariaExpanded = String(open);
-        } else {
-          this.listElement.toggleAttribute('data-context-menu-open', open);
-        }
+        this.triggerElement.ariaExpanded = String(open);
       });
     }
     if (open) {
@@ -270,7 +255,7 @@ export class Menu {
 
   private updatePopover(): void {
     const compute = () => {
-      computePosition(this.popoverReferenceElement, this.listElement, this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu']).then(({ x, y, placement }) => {
+      computePosition(this.triggerElement, this.listElement, this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu']).then(({ x, y, placement }) => {
         Object.assign(this.listElement.style, {
           left: `${x}px`,
           top: `${y}px`,
@@ -299,12 +284,12 @@ export class Menu {
     };
     compute();
     if (!this.cleanupPopover) {
-      this.cleanupPopover = autoUpdate(this.popoverReferenceElement, this.listElement, compute);
+      this.cleanupPopover = autoUpdate(this.triggerElement, this.listElement, compute);
     }
   }
 
   private handleOutsidePointerDown(event: PointerEvent): void {
-    if (this[!this.isContextMenu ? 'rootElement' : 'listElement'].contains(event.target as HTMLElement) || !this.triggerElement) {
+    if (this.rootElement.contains(event.target as HTMLElement) || !this.triggerElement) {
       return;
     }
     this.resetTabIndex();
@@ -329,7 +314,7 @@ export class Menu {
   private handleTriggerClick(event: MouseEvent): void {
     event.preventDefault();
     if (!this.isSubmenu) {
-      const open = this.triggerElement.ariaExpanded === 'true' || this.listElement.hasAttribute('data-context-menu-open');
+      const open = this.triggerElement.ariaExpanded === 'true';
       if (!this.isSubmenu || (event instanceof PointerEvent && event.pointerType !== 'mouse')) {
         this.toggle(!open);
       }
@@ -479,46 +464,5 @@ export class Menu {
 
   close(): void {
     this.toggle(false);
-  }
-}
-
-export class ContextMenu extends Menu {
-  private longPressTimer: number;
-
-  constructor(root: HTMLElement, options?: Partial<MenuOptions>) {
-    super(root, options, false, true);
-    this.longPressTimer = 0;
-    this.handleTriggerContextMenu = this.handleTriggerContextMenu.bind(this);
-    this.handleTriggerLongPressCancel = this.handleTriggerLongPressCancel.bind(this);
-    this.handleTriggerPointerDown = this.handleTriggerPointerDown.bind(this);
-    this.triggerElement.addEventListener('contextmenu', this.handleTriggerContextMenu);
-    ['pointercancel', 'pointerleave', 'pointerup'].forEach(name => this.triggerElement.addEventListener(name, this.handleTriggerLongPressCancel));
-    this.triggerElement.addEventListener('pointerdown', this.handleTriggerPointerDown);
-  }
-
-  private handleTriggerContextMenu(event: MouseEvent): void {
-    event.preventDefault();
-    if (this.listElement.hasAttribute('data-context-menu-open')) {
-      return;
-    }
-    const { clientX: x, clientY: y } = event;
-    this.popoverReferenceElement = {
-      getBoundingClientRect: () => new DOMRect(x, y, 0, 0),
-    };
-    super.open();
-  }
-
-  private handleTriggerLongPressCancel() {
-    window.clearTimeout(this.longPressTimer);
-  }
-
-  private handleTriggerPointerDown(event: PointerEvent): void {
-    if (event.pointerType === 'mouse') {
-      return;
-    }
-    event.preventDefault();
-    this.longPressTimer = window.setTimeout(() => {
-      this.handleTriggerContextMenu(event);
-    }, 500);
   }
 }

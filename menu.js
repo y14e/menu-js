@@ -3,7 +3,7 @@ import { autoUpdate, computePosition, flip, offset, shift } from 'https://cdn.js
 export class Menu {
   static menus = [];
 
-  constructor(root, options, submenu = false, contextMenu = false) {
+  constructor(root, options, submenu = false) {
     if (!root) {
       return;
     }
@@ -46,7 +46,6 @@ export class Menu {
       this.settings.animation.duration = 0;
     }
     this.isSubmenu = submenu;
-    this.isContextMenu = contextMenu;
     this.triggerElement = this.rootElement.querySelector(this.settings.selector[!this.isSubmenu ? 'trigger' : 'item']);
     this.listElement = this.rootElement.querySelector(this.settings.selector.list);
     this.itemElements = [...this.listElement.querySelectorAll(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} *)`)];
@@ -75,9 +74,6 @@ export class Menu {
     this.animation = null;
     this.submenus = [];
     this.submenuTimer = 0;
-    if (!this.isContextMenu) {
-      this.popoverReferenceElement = this.triggerElement;
-    }
     this.cleanupPopover = null;
     this.handleOutsidePointerDown = this.handleOutsidePointerDown.bind(this);
     this.handleRootFocusIn = this.handleRootFocusIn.bind(this);
@@ -95,13 +91,13 @@ export class Menu {
   }
 
   initialize() {
-    if ((this.isContextMenu && !this.triggerElement) || !this.listElement || !this.itemElements.length) {
+    if (!this.listElement || !this.itemElements.length) {
       return;
     }
     document.addEventListener('pointerdown', this.handleOutsidePointerDown);
     this.rootElement.addEventListener('focusin', this.handleRootFocusIn);
     this.rootElement.addEventListener('focusout', this.handleRootFocusOut);
-    if (!this.isContextMenu && this.triggerElement) {
+    if (this.triggerElement) {
       const id = Math.random().toString(36).slice(-8);
       this.triggerElement.setAttribute('aria-controls', (this.listElement.id ||= `menu-list-${id}`));
       this.triggerElement.ariaExpanded = 'false';
@@ -157,21 +153,12 @@ export class Menu {
   }
 
   toggle(open) {
-    // prettier-ignore
-    if (
-      open.toString() === this.triggerElement?.ariaExpanded
-      || (!this.isContextMenu && open.toString() === this.triggerElement?.ariaExpanded)
-      || (this.isContextMenu && open === this.listElement.hasAttribute('data-context-menu-open'))
-    ) {
+    if (open.toString() === this.triggerElement?.ariaExpanded) {
       return;
     }
     if (this.triggerElement) {
       window.requestAnimationFrame(() => {
-        if (!this.isContextMenu) {
-          this.triggerElement.ariaExpanded = String(open);
-        } else {
-          this.listElement.toggleAttribute('data-context-menu-open', open);
-        }
+        this.triggerElement.ariaExpanded = String(open);
       });
     }
     if (open) {
@@ -231,7 +218,7 @@ export class Menu {
 
   updatePopover() {
     const compute = () => {
-      computePosition(this.popoverReferenceElement, this.listElement, this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu']).then(({ x, y, placement }) => {
+      computePosition(this.triggerElement, this.listElement, this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu']).then(({ x, y, placement }) => {
         Object.assign(this.listElement.style, {
           left: `${x}px`,
           top: `${y}px`,
@@ -260,12 +247,12 @@ export class Menu {
     };
     compute();
     if (!this.cleanupPopover) {
-      this.cleanupPopover = autoUpdate(this.popoverReferenceElement, this.listElement, compute);
+      this.cleanupPopover = autoUpdate(this.triggerElement, this.listElement, compute);
     }
   }
 
   handleOutsidePointerDown(event) {
-    if (this[!this.isContextMenu ? 'rootElement' : 'listElement'].contains(event.target) || !this.triggerElement) {
+    if (this.rootElement.contains(event.target) || !this.triggerElement) {
       return;
     }
     this.resetTabIndex();
@@ -290,7 +277,7 @@ export class Menu {
   handleTriggerClick(event) {
     event.preventDefault();
     if (!this.isSubmenu) {
-      const open = this.triggerElement.ariaExpanded === 'true' || this.listElement.hasAttribute('data-context-menu-open');
+      const open = this.triggerElement.ariaExpanded === 'true';
       if (!this.isSubmenu || (event instanceof PointerEvent && event.pointerType !== 'mouse')) {
         this.toggle(!open);
       }
@@ -440,44 +427,5 @@ export class Menu {
 
   close() {
     this.toggle(false);
-  }
-}
-
-export class ContextMenu extends Menu {
-  constructor(root, options) {
-    super(root, options, false, true);
-    this.longPressTimer = 0;
-    this.handleTriggerContextMenu = this.handleTriggerContextMenu.bind(this);
-    this.handleTriggerLongPressCancel = this.handleTriggerLongPressCancel.bind(this);
-    this.handleTriggerPointerDown = this.handleTriggerPointerDown.bind(this);
-    this.triggerElement.addEventListener('contextmenu', this.handleTriggerContextMenu);
-    ['pointercancel', 'pointerleave', 'pointerup'].forEach(name => this.triggerElement.addEventListener(name, this.handleTriggerLongPressCancel));
-    this.triggerElement.addEventListener('pointerdown', this.handleTriggerPointerDown);
-  }
-
-  handleTriggerContextMenu(event) {
-    event.preventDefault();
-    if (this.listElement.hasAttribute('data-context-menu-open')) {
-      return;
-    }
-    const { clientX: x, clientY: y } = event;
-    this.popoverReferenceElement = {
-      getBoundingClientRect: () => new DOMRect(x, y, 0, 0),
-    };
-    super.open();
-  }
-
-  handleTriggerLongPressCancel() {
-    window.clearTimeout(this.longPressTimer);
-  }
-
-  handleTriggerPointerDown(event) {
-    if (event.pointerType === 'mouse') {
-      return;
-    }
-    event.preventDefault();
-    this.longPressTimer = window.setTimeout(() => {
-      this.handleTriggerContextMenu(event);
-    }, 500);
   }
 }
