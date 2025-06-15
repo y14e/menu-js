@@ -188,9 +188,9 @@ export class Menu {
         item.tabIndex = -1;
       });
     } else {
-      const focusable = this.itemElements.find(item => this.isFocusable(item));
+      const first = this.itemElements.find(item => this.isFocusable(item));
       this.itemElements.forEach(item => {
-        item.tabIndex = item === focusable ? 0 : -1;
+        item.tabIndex = item === first ? 0 : -1;
       });
     }
   }
@@ -442,11 +442,7 @@ export class Menu {
   }
 
   private handleItemFocus(event: FocusEvent): void {
-    const target = event.currentTarget as HTMLElement;
-    target.tabIndex = 0;
-    window.requestAnimationFrame(() => {
-      target.tabIndex = 0;
-    });
+    (event.currentTarget as HTMLElement).tabIndex = 0;
   }
 
   private handleItemPointerEnter(event: PointerEvent): void {
