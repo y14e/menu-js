@@ -262,7 +262,7 @@ export class Menu {
   }
 
   handleOutsidePointerDown(event) {
-    if (this[!this.isContextMenu ? 'rootElement' : 'listElement'].contains(event.currentTarget) || !this.triggerElement) {
+    if (this[!this.isContextMenu ? 'rootElement' : 'listElement'].contains(event.target) || !this.triggerElement) {
       return;
     }
     this.resetTabIndex();

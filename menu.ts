@@ -301,7 +301,7 @@ export class Menu {
   }
 
   private handleOutsidePointerDown(event: PointerEvent): void {
-    if (this[!this.isContextMenu ? 'rootElement' : 'listElement'].contains(event.currentTarget as HTMLElement) || !this.triggerElement) {
+    if (this[!this.isContextMenu ? 'rootElement' : 'listElement'].contains(event.target as HTMLElement) || !this.triggerElement) {
       return;
     }
     this.resetTabIndex();
