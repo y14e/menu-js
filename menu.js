@@ -160,7 +160,7 @@ export class Menu {
     // prettier-ignore
     if (
       open.toString() === this.triggerElement?.ariaExpanded
-      || (!this.isContextMenu && open === (this.triggerElement?.ariaExpanded === 'true'))
+      || (!this.isContextMenu && open.toString() === this.triggerElement?.ariaExpanded)
       || (this.isContextMenu && open === this.listElement.hasAttribute('data-context-menu-open'))
     ) {
       return;
@@ -195,6 +195,9 @@ export class Menu {
       if (this.triggerElement && this.rootElement.contains(document.activeElement)) {
         this.triggerElement.focus();
       }
+    }
+    if (!this.triggerElement) {
+      return;
     }
     const opacity = window.getComputedStyle(this.listElement).getPropertyValue('opacity');
     if (this.animation) {
