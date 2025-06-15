@@ -79,6 +79,7 @@ export class Menu {
       this.popoverReferenceElement = this.triggerElement;
     }
     this.cleanupPopover = null;
+    this.handleOutsidePointerDown = this.handleOutsidePointerDown.bind(this);
     this.handleRootFocusIn = this.handleRootFocusIn.bind(this);
     this.handleRootFocusOut = this.handleRootFocusOut.bind(this);
     this.handleTriggerClick = this.handleTriggerClick.bind(this);
@@ -97,6 +98,7 @@ export class Menu {
     if ((this.isContextMenu && !this.triggerElement) || !this.listElement || !this.itemElements.length) {
       return;
     }
+    document.addEventListener('pointerdown', this.handleOutsidePointerDown);
     this.rootElement.addEventListener('focusin', this.handleRootFocusIn);
     this.rootElement.addEventListener('focusout', this.handleRootFocusOut);
     if (!this.isContextMenu && this.triggerElement) {
@@ -259,6 +261,14 @@ export class Menu {
     }
   }
 
+  handleOutsidePointerDown(event) {
+    if (this[!this.isContextMenu ? 'rootElement' : 'listElement'].contains(event.currentTarget) || !this.triggerElement) {
+      return;
+    }
+    this.resetTabIndex();
+    this.close();
+  }
+
   handleRootFocusIn(event) {
     if (this.rootElement.contains(event.relatedTarget) && this.rootElement.contains(document.activeElement)) {
       return;
@@ -278,7 +288,7 @@ export class Menu {
     event.preventDefault();
     if (!this.isSubmenu) {
       const open = this.triggerElement.ariaExpanded === 'true' || this.listElement.hasAttribute('data-context-menu-open');
-      if (!this.isSubmenu || (event instanceof PointerEvent && event.pointerType !== 'mouse')) {
+      if (!this.isSubmenu || event.pointerType !== 'mouse') {
         this.toggle(!open);
       }
     } else {
