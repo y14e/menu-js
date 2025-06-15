@@ -79,15 +79,15 @@ export class Menu {
       this.popoverReferenceElement = this.triggerElement;
     }
     this.cleanupPopover = null;
-    this.handleOutsidePointerDown = this.handleOutsidePointerDown.bind(this);
+    this.handleRootFocusIn = this.handleRootFocusIn.bind(this);
     this.handleRootFocusOut = this.handleRootFocusOut.bind(this);
     this.handleTriggerClick = this.handleTriggerClick.bind(this);
     this.handleTriggerKeyDown = this.handleTriggerKeyDown.bind(this);
     this.handleListKeyDown = this.handleListKeyDown.bind(this);
-    this.handleItemFocusIn = this.handleItemFocusIn.bind(this);
-    this.handleItemFocusOut = this.handleItemFocusOut.bind(this);
+    this.handleItemBlur = this.handleItemBlur.bind(this);
+    this.handleItemFocus = this.handleItemFocus.bind(this);
+    this.handleItemPointerEnter = this.handleItemPointerEnter.bind(this);
     this.handleItemPointerLeave = this.handleItemPointerLeave.bind(this);
-    this.handleItemPointerOver = this.handleItemPointerOver.bind(this);
     this.handleCheckboxItemClick = this.handleCheckboxItemClick.bind(this);
     this.handleRadioItemClick = this.handleRadioItemClick.bind(this);
     this.initialize();
@@ -97,7 +97,7 @@ export class Menu {
     if ((this.isContextMenu && !this.triggerElement) || !this.listElement || !this.itemElements.length) {
       return;
     }
-    document.addEventListener('pointerdown', this.handleOutsidePointerDown);
+    this.rootElement.addEventListener('focusin', this.handleRootFocusIn);
     this.rootElement.addEventListener('focusout', this.handleRootFocusOut);
     if (!this.isContextMenu && this.triggerElement) {
       const id = Math.random().toString(36).slice(-8);
@@ -119,10 +119,10 @@ export class Menu {
       if (root.querySelector(this.settings.selector.list)) {
         this.submenus.push(new Menu(root, this.settings, true));
       }
-      item.addEventListener('focusin', this.handleItemFocusIn);
-      item.addEventListener('focusout', this.handleItemFocusOut);
+      item.addEventListener('blur', this.handleItemBlur);
+      item.addEventListener('focus', this.handleItemFocus);
+      item.addEventListener('pointerenter', this.handleItemPointerEnter);
       item.addEventListener('pointerleave', this.handleItemPointerLeave);
-      item.addEventListener('pointerover', this.handleItemPointerOver);
     });
     if (this.checkboxItemElements.length) {
       this.checkboxItemElements.forEach(item => item.addEventListener('click', this.handleCheckboxItemClick));
@@ -141,8 +141,8 @@ export class Menu {
     return element.ariaDisabled !== 'true' && !element.hasAttribute('disabled');
   }
 
-  resetTabIndex() {
-    if (this.triggerElement) {
+  resetTabIndex(force = false) {
+    if (this.triggerElement || force) {
       this.itemElements.forEach(item => {
         item.tabIndex = -1;
       });
@@ -183,11 +183,7 @@ export class Menu {
       }
       const focusable = this.itemElements.find(this.isFocusable);
       if (focusable) {
-        window.requestAnimationFrame(() => {
-          window.requestAnimationFrame(() => {
-            focusable.focus();
-          });
-        });
+        focusable.focus();
       }
     } else {
       if (this.submenus.length) {
@@ -263,33 +259,26 @@ export class Menu {
     }
   }
 
-  handleOutsidePointerDown(event) {
-    if (this[!this.isContextMenu ? 'rootElement' : 'listElement'].contains(event.target) || !this.triggerElement) {
+  handleRootFocusIn(event) {
+    if (this.rootElement.contains(event.relatedTarget) && this.rootElement.contains(document.activeElement)) {
       return;
     }
-    this.close();
+    this.resetTabIndex(true);
   }
 
   handleRootFocusOut(event) {
-    const target = event.relatedTarget;
-    // prettier-ignore
-    if (
-      !target
-      || this.rootElement.contains(target)
-      || (!this.isContextMenu && (this.triggerElement?.ariaExpanded === 'false' || this.listElement.hasAttribute('data-context-menu-open')))
-    ) {
+    if (this.rootElement.contains(event.relatedTarget)) {
       return;
     }
-    if (this.triggerElement) {
-      this.close();
-    }
+    this.resetTabIndex();
+    this.close();
   }
 
   handleTriggerClick(event) {
     event.preventDefault();
     if (!this.isSubmenu) {
       const open = this.triggerElement.ariaExpanded === 'true' || this.listElement.hasAttribute('data-context-menu-open');
-      if (!this.isSubmenu || event.pointerType !== 'mouse') {
+      if (!this.isSubmenu || (event instanceof PointerEvent && event.pointerType !== 'mouse')) {
         this.toggle(!open);
       }
     } else {
@@ -325,11 +314,7 @@ export class Menu {
         index = 0;
         break;
     }
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => {
-        focusables[index].focus();
-      });
-    });
+    focusables[index].focus();
   }
 
   handleListKeyDown(event) {
@@ -396,46 +381,36 @@ export class Menu {
         const foundIndex = targetFocusables.findIndex(focusable => focusables.indexOf(focusable) > currentIndex);
         newIndex = foundIndex !== -1 ? foundIndex : 0;
     }
-    targetFocusables[newIndex].focus();
+    const focusable = targetFocusables[newIndex];
+    focusable.focus();
   }
 
-  handleItemFocusIn(event) {
+  handleItemBlur(event) {
+    event.currentTarget.tabIndex = -1;
+  }
+
+  handleItemFocus(event) {
     const target = event.currentTarget;
-    this.itemElements.forEach(item => {
-      item.tabIndex = item === target ? 0 : -1;
+    target.tabIndex = 0;
+    window.requestAnimationFrame(() => {
+      target.tabIndex = 0;
     });
   }
 
-  handleItemFocusOut() {
-    this.resetTabIndex();
+  handleItemPointerEnter(event) {
+    window.clearTimeout(this.submenuTimer);
+    const target = event.currentTarget;
+    this.submenuTimer = window.setTimeout(() => {
+      if (this.submenus.length) {
+        this.submenus.forEach(submenu => submenu.toggle(submenu.triggerElement === target));
+      }
+      target.tabIndex = 0;
+      target.focus();
+    }, this.settings.delay);
   }
 
   handleItemPointerLeave() {
     window.clearTimeout(this.submenuTimer);
-  }
-
-  handleItemPointerOver(event) {
-    window.clearTimeout(this.submenuTimer);
-    const focusables = this.itemElements.filter(this.isFocusable);
-    if (!focusables.length) {
-      return;
-    }
-    const target = event.currentTarget;
-    focusables.forEach(focusable => {
-      focusable.tabIndex = focusable === target ? 0 : -1;
-    });
-    this.submenuTimer = window.setTimeout(() => {
-      if (this.submenus.length) {
-        this.submenus.forEach(submenu => {
-          if (submenu.triggerElement === target) {
-            submenu.open();
-          } else {
-            submenu.close();
-          }
-        });
-      }
-      target.focus();
-    }, this.settings.delay);
   }
 
   handleCheckboxItemClick(event) {

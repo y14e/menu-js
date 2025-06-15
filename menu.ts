@@ -23,14 +23,14 @@ type MenuPopoverOptions = {
 };
 
 export class Menu {
-  protected rootElement: HTMLElement;
-  private defaults: MenuOptions;
-  private settings: MenuOptions;
-  private isSubmenu: boolean;
-  private isContextMenu: boolean;
-  protected triggerElement: HTMLElement;
-  protected listElement: HTMLElement;
-  private itemElements: HTMLElement[];
+  protected rootElement!: HTMLElement;
+  private defaults!: MenuOptions;
+  private settings!: MenuOptions;
+  private isSubmenu!: boolean;
+  private isContextMenu!: boolean;
+  protected triggerElement!: HTMLElement;
+  protected listElement!: HTMLElement;
+  private itemElements!: HTMLElement[];
   private itemElementsByInitial!: Record<string, HTMLElement[]>;
   private checkboxItemElements!: HTMLElement[];
   private radioItemElements!: HTMLElement[];
@@ -118,25 +118,25 @@ export class Menu {
       this.popoverReferenceElement = this.triggerElement;
     }
     this.cleanupPopover = null;
-    this.handleOutsidePointerDown = this.handleOutsidePointerDown.bind(this);
+    this.handleRootFocusIn = this.handleRootFocusIn.bind(this);
     this.handleRootFocusOut = this.handleRootFocusOut.bind(this);
     this.handleTriggerClick = this.handleTriggerClick.bind(this);
     this.handleTriggerKeyDown = this.handleTriggerKeyDown.bind(this);
     this.handleListKeyDown = this.handleListKeyDown.bind(this);
-    this.handleItemFocusIn = this.handleItemFocusIn.bind(this);
-    this.handleItemFocusOut = this.handleItemFocusOut.bind(this);
+    this.handleItemBlur = this.handleItemBlur.bind(this);
+    this.handleItemFocus = this.handleItemFocus.bind(this);
+    this.handleItemPointerEnter = this.handleItemPointerEnter.bind(this);
     this.handleItemPointerLeave = this.handleItemPointerLeave.bind(this);
-    this.handleItemPointerOver = this.handleItemPointerOver.bind(this);
     this.handleCheckboxItemClick = this.handleCheckboxItemClick.bind(this);
     this.handleRadioItemClick = this.handleRadioItemClick.bind(this);
     this.initialize();
   }
 
-  initialize() {
+  private initialize(): void {
     if ((this.isContextMenu && !this.triggerElement) || !this.listElement || !this.itemElements.length) {
       return;
     }
-    document.addEventListener('pointerdown', this.handleOutsidePointerDown);
+    this.rootElement.addEventListener('focusin', this.handleRootFocusIn);
     this.rootElement.addEventListener('focusout', this.handleRootFocusOut);
     if (!this.isContextMenu && this.triggerElement) {
       const id = Math.random().toString(36).slice(-8);
@@ -158,10 +158,10 @@ export class Menu {
       if (root.querySelector(this.settings.selector.list)) {
         this.submenus.push(new Menu(root, this.settings, true));
       }
-      item.addEventListener('focusin', this.handleItemFocusIn);
-      item.addEventListener('focusout', this.handleItemFocusOut);
+      item.addEventListener('blur', this.handleItemBlur);
+      item.addEventListener('focus', this.handleItemFocus);
+      item.addEventListener('pointerenter', this.handleItemPointerEnter);
       item.addEventListener('pointerleave', this.handleItemPointerLeave);
-      item.addEventListener('pointerover', this.handleItemPointerOver);
     });
     if (this.checkboxItemElements.length) {
       this.checkboxItemElements.forEach(item => item.addEventListener('click', this.handleCheckboxItemClick));
@@ -180,8 +180,8 @@ export class Menu {
     return element.ariaDisabled !== 'true' && !element.hasAttribute('disabled');
   }
 
-  private resetTabIndex(): void {
-    if (this.triggerElement) {
+  private resetTabIndex(force = false): void {
+    if (this.triggerElement || force) {
       this.itemElements.forEach(item => {
         item.tabIndex = -1;
       });
@@ -222,11 +222,7 @@ export class Menu {
       }
       const focusable = this.itemElements.find(this.isFocusable);
       if (focusable) {
-        window.requestAnimationFrame(() => {
-          window.requestAnimationFrame(() => {
-            focusable.focus();
-          });
-        });
+        focusable.focus();
       }
     } else {
       if (this.submenus.length) {
@@ -302,26 +298,19 @@ export class Menu {
     }
   }
 
-  private handleOutsidePointerDown(event: PointerEvent): void {
-    if (this[!this.isContextMenu ? 'rootElement' : 'listElement'].contains(event.target as HTMLElement) || !this.triggerElement) {
+  private handleRootFocusIn(event: FocusEvent): void {
+    if (this.rootElement.contains(event.relatedTarget as HTMLElement) && this.rootElement.contains(document.activeElement)) {
       return;
     }
-    this.close();
+    this.resetTabIndex(true);
   }
 
   private handleRootFocusOut(event: FocusEvent): void {
-    const target = event.relatedTarget as HTMLElement;
-    // prettier-ignore
-    if (
-      !target
-      || this.rootElement.contains(target)
-      || (!this.isContextMenu && (this.triggerElement?.ariaExpanded === 'false' || this.listElement.hasAttribute('data-context-menu-open')))
-    ) {
+    if (this.rootElement.contains(event.relatedTarget as HTMLElement)) {
       return;
     }
-    if (this.triggerElement) {
-      this.close();
-    }
+    this.resetTabIndex();
+    this.close();
   }
 
   private handleTriggerClick(event: MouseEvent): void {
@@ -349,7 +338,7 @@ export class Menu {
     if (!length) {
       return;
     }
-    let index: number;
+    let index!: number;
     switch (key) {
       case 'Enter':
       case ' ':
@@ -364,11 +353,7 @@ export class Menu {
         index = 0;
         break;
     }
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => {
-        focusables[index].focus();
-      });
-    });
+    focusables[index].focus();
   }
 
   private handleListKeyDown(event: KeyboardEvent): void {
@@ -406,7 +391,7 @@ export class Menu {
     if (currentIndex === -1) {
       return;
     }
-    let newIndex: number;
+    let newIndex;
     let targetFocusables = focusables;
     switch (key) {
       case 'Tab':
@@ -435,46 +420,36 @@ export class Menu {
         const foundIndex = targetFocusables.findIndex(focusable => focusables.indexOf(focusable) > currentIndex);
         newIndex = foundIndex !== -1 ? foundIndex : 0;
     }
-    targetFocusables[newIndex].focus();
+    const focusable = targetFocusables[newIndex];
+    focusable.focus();
   }
 
-  private handleItemFocusIn(event: FocusEvent): void {
-    const target = event.currentTarget;
-    this.itemElements.forEach(item => {
-      item.tabIndex = item === target ? 0 : -1;
+  private handleItemBlur(event: FocusEvent): void {
+    (event.currentTarget as HTMLElement).tabIndex = -1;
+  }
+
+  private handleItemFocus(event: FocusEvent): void {
+    const target = event.currentTarget as HTMLElement;
+    target.tabIndex = 0;
+    window.requestAnimationFrame(() => {
+      target.tabIndex = 0;
     });
   }
 
-  private handleItemFocusOut() {
-    this.resetTabIndex();
+  private handleItemPointerEnter(event: PointerEvent): void {
+    window.clearTimeout(this.submenuTimer);
+    const target = event.currentTarget as HTMLElement;
+    this.submenuTimer = window.setTimeout(() => {
+      if (this.submenus.length) {
+        this.submenus.forEach(submenu => submenu.toggle(submenu.triggerElement === target));
+      }
+      target.tabIndex = 0;
+      target.focus();
+    }, this.settings.delay);
   }
 
   private handleItemPointerLeave(): void {
     window.clearTimeout(this.submenuTimer);
-  }
-
-  private handleItemPointerOver(event: PointerEvent): void {
-    window.clearTimeout(this.submenuTimer);
-    const focusables = this.itemElements.filter(this.isFocusable);
-    if (!focusables.length) {
-      return;
-    }
-    const target = event.currentTarget as HTMLElement;
-    focusables.forEach(focusable => {
-      focusable.tabIndex = focusable === target ? 0 : -1;
-    });
-    this.submenuTimer = window.setTimeout(() => {
-      if (this.submenus.length) {
-        this.submenus.forEach(submenu => {
-          if (submenu.triggerElement === target) {
-            submenu.open();
-          } else {
-            submenu.close();
-          }
-        });
-      }
-      target.focus();
-    }, this.settings.delay);
   }
 
   private handleCheckboxItemClick(event: MouseEvent): void {
