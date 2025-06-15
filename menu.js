@@ -288,7 +288,7 @@ export class Menu {
     event.preventDefault();
     if (!this.isSubmenu) {
       const open = this.triggerElement.ariaExpanded === 'true' || this.listElement.hasAttribute('data-context-menu-open');
-      if (!this.isSubmenu || event.pointerType !== 'mouse') {
+      if (!this.isSubmenu || (event instanceof PointerEvent && event.pointerType !== 'mouse')) {
         this.toggle(!open);
       }
     } else {
