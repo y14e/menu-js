@@ -26,6 +26,7 @@ type MenuPopoverOptions = {
 };
 
 export class Menu {
+  private static menus: Menu[] = [];
   protected rootElement!: HTMLElement;
   private defaults!: MenuOptions;
   private settings!: MenuOptions;
@@ -40,7 +41,6 @@ export class Menu {
   private animation!: Animation | null;
   private submenus!: Menu[];
   private submenuTimer!: number;
-  private static menus: Menu[] = [];
   private cleanupPopover!: Function | null;
 
   constructor(root: HTMLElement, options?: Partial<MenuOptions>, submenu = false) {
