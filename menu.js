@@ -71,7 +71,7 @@ export class Menu {
         if (!group || !this.rootElement.contains(group)) {
           group = this.rootElement;
         }
-        (this.radioItemElementsByGroup.get(group) ?? this.radioItemElementsByGroup.set(group, []).get(group)).push(item);
+        (this.radioItemElementsByGroup.get(group) || this.radioItemElementsByGroup.set(group, []).get(group)).push(item);
       });
     }
     this.animation = null;
