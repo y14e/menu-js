@@ -188,6 +188,14 @@ export class Menu {
     Menu.menus.push(this);
   }
 
+  private getActiveElement(): HTMLElement | null {
+    let active: Element | null = document.activeElement;
+    while (active instanceof HTMLElement && active.shadowRoot?.activeElement) {
+      active = active.shadowRoot.activeElement;
+    }
+    return active instanceof HTMLElement ? active : null;
+  }
+
   private isFocusable(element: HTMLElement): boolean {
     return element.ariaDisabled !== 'true' && !element.hasAttribute('disabled');
   }
@@ -396,7 +404,7 @@ export class Menu {
     event.preventDefault();
     const focusables = this.itemElements.filter(this.isFocusable);
     const length = focusables.length;
-    const active = document.activeElement;
+    const active = this.getActiveElement();
     const current = active instanceof HTMLElement ? active : null;
     if (!current) {
       return;
