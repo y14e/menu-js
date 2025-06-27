@@ -200,7 +200,7 @@ export class Menu {
         window.clearTimeout(this.submenuTimer);
         this.submenus.forEach(submenu => submenu.close());
       }
-      if (this.triggerElement && this.rootElement.contains(document.activeElement)) {
+      if (this.triggerElement && this.rootElement.contains(this.getActiveElement())) {
         this.triggerElement.focus();
       }
     }
@@ -281,7 +281,7 @@ export class Menu {
   }
 
   handleRootFocusIn(event) {
-    if (this.rootElement.contains(event.relatedTarget) && this.rootElement.contains(document.activeElement)) {
+    if (this.rootElement.contains(event.relatedTarget) && this.rootElement.contains(this.getActiveElement())) {
       return;
     }
     this.resetTabIndex(true);

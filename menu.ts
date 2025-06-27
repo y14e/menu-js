@@ -240,7 +240,7 @@ export class Menu {
         window.clearTimeout(this.submenuTimer);
         this.submenus.forEach(submenu => submenu.close());
       }
-      if (this.triggerElement && this.rootElement.contains(document.activeElement)) {
+      if (this.triggerElement && this.rootElement.contains(this.getActiveElement())) {
         this.triggerElement.focus();
       }
     }
@@ -321,7 +321,7 @@ export class Menu {
   }
 
   private handleRootFocusIn(event: FocusEvent): void {
-    if (this.rootElement.contains(event.relatedTarget as HTMLElement) && this.rootElement.contains(document.activeElement)) {
+    if (this.rootElement.contains(event.relatedTarget as HTMLElement) && this.rootElement.contains(this.getActiveElement())) {
       return;
     }
     this.resetTabIndex(true);
