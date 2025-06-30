@@ -9,14 +9,6 @@ export class Menu {
     }
     this.rootElement = root;
     this.defaults = {
-      selector: {
-        trigger: '[data-menu-trigger]',
-        list: '[role="menu"]',
-        item: '[role^="menuitem"]',
-        checkboxItem: '[role="menuitemcheckbox"]',
-        radioItem: '[role="menuitemradio"]',
-        group: '[role="group"]',
-      },
       animation: {
         duration: 300,
       },
@@ -32,11 +24,18 @@ export class Menu {
         },
         transformOrigin: true,
       },
+      selector: {
+        checkboxItem: '[role="menuitemcheckbox"]',
+        group: '[role="group"]',
+        item: '[role^="menuitem"]',
+        list: '[role="menu"]',
+        radioItem: '[role="menuitemradio"]',
+        trigger: '[data-menu-trigger]',
+      },
     };
     this.settings = {
       ...this.defaults,
       ...options,
-      selector: { ...this.defaults.selector, ...options?.selector },
       animation: { ...this.defaults.animation, ...options?.animation },
       popover: {
         ...this.defaults.popover,
@@ -44,6 +43,7 @@ export class Menu {
         menu: { ...this.defaults.popover.menu, ...options?.popover?.menu },
         submenu: { ...this.defaults.popover.submenu, ...options?.popover?.submenu },
       },
+      selector: { ...this.defaults.selector, ...options?.selector },
     };
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       this.settings.animation.duration = 0;
