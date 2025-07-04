@@ -57,13 +57,13 @@ export class Menu {
       this.itemElements.forEach(item => {
         const initial = item.textContent.trim().charAt(0).toLowerCase();
         if (/\S/.test(initial)) {
-          item.ariaKeyShortcuts = initial;
+          item.setAttribute('aria-keyshortcuts', initial);
           (this.itemElementsByInitial[initial] ||= []).push(item);
         }
       });
     }
-    this.checkboxItemElements = this.itemElements.filter(item => item.role === 'menuitemcheckbox');
-    this.radioItemElements = this.itemElements.filter(item => item.role === 'menuitemradio');
+    this.checkboxItemElements = this.itemElements.filter(item => item.getAttribute('role') === 'menuitemcheckbox');
+    this.radioItemElements = this.itemElements.filter(item => item.getAttribute('role') === 'menuitemradio');
     this.radioItemElementsByGroup = new Map();
     if (this.radioItemElements.length) {
       this.radioItemElements.forEach(item => {
@@ -103,10 +103,10 @@ export class Menu {
     if (this.triggerElement) {
       const id = Math.random().toString(36).slice(-8);
       this.triggerElement.setAttribute('aria-controls', (this.listElement.id ||= `menu-list-${id}`));
-      this.triggerElement.ariaExpanded = 'false';
-      this.triggerElement.ariaHasPopup = 'true';
+      this.triggerElement.setAttribute('aria-expanded', 'false');
+      this.triggerElement.setAttribute('aria-haspopup', 'true');
       this.triggerElement.id ||= `menu-trigger-${id}`;
-      this.triggerElement.tabIndex = this.isFocusable(this.triggerElement) && !this.isSubmenu ? 0 : -1;
+      this.triggerElement.setAttribute('tabindex', this.isFocusable(this.triggerElement) && !this.isSubmenu ? '0' : '-1');
       if (!this.isFocusable(this.triggerElement)) {
         this.triggerElement.style.setProperty('pointer-events', 'none');
       }
@@ -114,7 +114,7 @@ export class Menu {
       this.triggerElement.addEventListener('keydown', this.handleTriggerKeyDown);
       this.listElement.setAttribute('aria-labelledby', `${this.listElement.getAttribute('aria-labelledby') || ''} ${this.triggerElement.id}`.trim());
     }
-    this.listElement.role = 'menu';
+    this.listElement.setAttribute('role', 'menu');
     this.listElement.addEventListener('keydown', this.handleListKeyDown);
     this.itemElements.forEach(item => {
       const root = item.parentElement;
@@ -122,7 +122,7 @@ export class Menu {
         this.submenus.push(new Menu(root, this.settings, true));
       }
       if ([this.checkboxItemElements, this.radioItemElements].every(list => !list.includes(item))) {
-        item.role = 'menuitem';
+        item.setAttribute('role', 'menuitem');
       }
       item.addEventListener('blur', this.handleItemBlur);
       item.addEventListener('focus', this.handleItemFocus);
@@ -131,13 +131,13 @@ export class Menu {
     });
     if (this.checkboxItemElements.length) {
       this.checkboxItemElements.forEach(item => {
-        item.role = 'menuitemcheckbox';
+        item.setAttribute('role', 'menuitemcheckbox');
         item.addEventListener('click', this.handleCheckboxItemClick);
       });
     }
     if (this.radioItemElements.length) {
       this.radioItemElements.forEach(item => {
-        item.role = 'menuitemradio';
+        item.setAttribute('role', 'menuitemradio');
         item.addEventListener('click', this.handleRadioItemClick);
       });
     }
@@ -157,29 +157,29 @@ export class Menu {
   }
 
   isFocusable(element) {
-    return element.ariaDisabled !== 'true' && !element.hasAttribute('disabled');
+    return element.getAttribute('aria-disabled') !== 'true' && !element.hasAttribute('disabled');
   }
 
   resetTabIndex(force = false) {
     if (this.triggerElement || force) {
       this.itemElements.forEach(item => {
-        item.tabIndex = -1;
+        item.setAttribute('tabindex', '-1');
       });
     } else {
       const first = this.itemElements.find(item => this.isFocusable(item));
       this.itemElements.forEach(item => {
-        item.tabIndex = item === first ? 0 : -1;
+        item.setAttribute('tabindex', item === first ? '0' : '-1');
       });
     }
   }
 
   toggle(open) {
-    if (open.toString() === this.triggerElement?.ariaExpanded) {
+    if (open.toString() === this.triggerElement?.getAttribute('aria-expanded')) {
       return;
     }
     if (this.triggerElement) {
       window.requestAnimationFrame(() => {
-        this.triggerElement.ariaExpanded = String(open);
+        this.triggerElement.setAttribute('aria-expanded', String(open));
       });
     }
     if (open) {
@@ -298,7 +298,7 @@ export class Menu {
   handleTriggerClick(event) {
     event.preventDefault();
     if (!this.isSubmenu) {
-      const open = this.triggerElement.ariaExpanded === 'true';
+      const open = this.triggerElement.getAttribute('aria-expanded') === 'true';
       if (!this.isSubmenu || (event instanceof PointerEvent && event.pointerType !== 'mouse')) {
         this.toggle(!open);
       }
@@ -407,11 +407,11 @@ export class Menu {
   }
 
   handleItemBlur(event) {
-    event.currentTarget.tabIndex = -1;
+    event.currentTarget.setAttribute('tabindex', '-1');
   }
 
   handleItemFocus(event) {
-    event.currentTarget.tabIndex = 0;
+    event.currentTarget.setAttribute('tabindex', '0');
   }
 
   handleItemPointerOut() {
@@ -425,20 +425,20 @@ export class Menu {
       if (this.submenus.length) {
         this.submenus.forEach(submenu => submenu.toggle(submenu.triggerElement === item));
       }
-      item.tabIndex = 0;
+      item.setAttribute('tabindex', '0');
       item.focus();
     }, this.settings.delay);
   }
 
   handleCheckboxItemClick(event) {
     const item = event.currentTarget;
-    item.ariaChecked = String(item.ariaChecked === 'false');
+    item.setAttribute('aria-checked', String(item.getAttribute('aria-checked') === 'false'));
   }
 
   handleRadioItemClick(event) {
     const target = event.currentTarget;
     this.radioItemElementsByGroup.get(target.closest(this.settings.selector.group) || this.rootElement).forEach(item => {
-      item.ariaChecked = String(item === target);
+      item.setAttribute('aria-checked', String(item === target));
     });
   }
 
