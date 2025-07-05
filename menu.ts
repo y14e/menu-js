@@ -197,7 +197,7 @@ export class Menu {
   }
 
   private isFocusable(element: HTMLElement): boolean {
-    return element.ariaDisabled !== 'true' && !element.hasAttribute('disabled');
+    return element.getAttribute('aria-disabled') !== 'true' && !element.hasAttribute('disabled');
   }
 
   private resetTabIndex(force = false): void {
