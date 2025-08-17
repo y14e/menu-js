@@ -27,12 +27,12 @@ type MenuPopoverOptions = {
 
 export class Menu {
   private static menus: Menu[] = [];
-  protected rootElement!: HTMLElement;
+  private rootElement!: HTMLElement;
   private defaults!: MenuOptions;
   private settings!: MenuOptions;
   private isSubmenu!: boolean;
-  protected triggerElement!: HTMLElement;
-  protected listElement!: HTMLElement;
+  private triggerElement!: HTMLElement;
+  private listElement!: HTMLElement;
   private itemElements!: HTMLElement[];
   private itemElementsByInitial!: Record<string, HTMLElement[]>;
   private checkboxItemElements!: HTMLElement[];
