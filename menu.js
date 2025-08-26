@@ -273,7 +273,7 @@ export class Menu {
   }
 
   handleOutsidePointerDown(event) {
-    if (this.rootElement.contains(event.target) || !this.triggerElement) {
+    if (event.composedPath().includes(this.rootElement) || !this.triggerElement) {
       return;
     }
     this.resetTabIndex();

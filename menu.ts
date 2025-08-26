@@ -313,7 +313,7 @@ export class Menu {
   }
 
   private handleOutsidePointerDown(event: PointerEvent): void {
-    if (this.rootElement.contains(event.target as HTMLElement) || !this.triggerElement) {
+    if (event.composedPath().includes(this.rootElement) || !this.triggerElement) {
       return;
     }
     this.resetTabIndex();
