@@ -25,7 +25,7 @@ type MenuPopoverOptions = {
   placement: Placement;
 };
 
-export class Menu {
+export default class Menu {
   private static menus: Menu[] = [];
   private rootElement!: HTMLElement;
   private defaults!: MenuOptions;
