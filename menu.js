@@ -77,6 +77,8 @@ export default class Menu {
     this.animation = null;
     this.submenus = [];
     this.submenuTimer = 0;
+    this.eventController = new AbortController();
+    this.destroyed = false;
     this.cleanupPopover = null;
     this.handleOutsidePointerDown = this.handleOutsidePointerDown.bind(this);
     this.handleRootFocusIn = this.handleRootFocusIn.bind(this);
@@ -97,9 +99,10 @@ export default class Menu {
     if (!this.listElement || !this.itemElements.length) {
       return;
     }
-    document.addEventListener('pointerdown', this.handleOutsidePointerDown);
-    this.rootElement.addEventListener('focusin', this.handleRootFocusIn);
-    this.rootElement.addEventListener('focusout', this.handleRootFocusOut);
+    const { signal } = this.eventController;
+    document.addEventListener('pointerdown', this.handleOutsidePointerDown, { signal });
+    this.rootElement.addEventListener('focusin', this.handleRootFocusIn, { signal });
+    this.rootElement.addEventListener('focusout', this.handleRootFocusOut, { signal });
     if (this.triggerElement) {
       const id = Math.random().toString(36).slice(-8);
       this.triggerElement.setAttribute('aria-controls', (this.listElement.id ||= `menu-list-${id}`));
@@ -110,12 +113,12 @@ export default class Menu {
       if (!this.isFocusable(this.triggerElement)) {
         this.triggerElement.style.setProperty('pointer-events', 'none');
       }
-      this.triggerElement.addEventListener('click', this.handleTriggerClick);
-      this.triggerElement.addEventListener('keydown', this.handleTriggerKeyDown);
+      this.triggerElement.addEventListener('click', this.handleTriggerClick, { signal });
+      this.triggerElement.addEventListener('keydown', this.handleTriggerKeyDown, { signal });
       this.listElement.setAttribute('aria-labelledby', `${this.listElement.getAttribute('aria-labelledby') || ''} ${this.triggerElement.id}`.trim());
     }
     this.listElement.setAttribute('role', 'menu');
-    this.listElement.addEventListener('keydown', this.handleListKeyDown);
+    this.listElement.addEventListener('keydown', this.handleListKeyDown, { signal });
     this.itemElements.forEach(item => {
       const root = item.parentElement;
       if (root.querySelector(this.settings.selector.list)) {
@@ -124,21 +127,21 @@ export default class Menu {
       if ([this.checkboxItemElements, this.radioItemElements].every(list => !list.includes(item))) {
         item.setAttribute('role', 'menuitem');
       }
-      item.addEventListener('blur', this.handleItemBlur);
-      item.addEventListener('focus', this.handleItemFocus);
-      item.addEventListener('pointerout', this.handleItemPointerOut);
-      item.addEventListener('pointerover', this.handleItemPointerOver);
+      item.addEventListener('blur', this.handleItemBlur, { signal });
+      item.addEventListener('focus', this.handleItemFocus, { signal });
+      item.addEventListener('pointerout', this.handleItemPointerOut, { signal });
+      item.addEventListener('pointerover', this.handleItemPointerOver, { signal });
     });
     if (this.checkboxItemElements.length) {
       this.checkboxItemElements.forEach(item => {
         item.setAttribute('role', 'menuitemcheckbox');
-        item.addEventListener('click', this.handleCheckboxItemClick);
+        item.addEventListener('click', this.handleCheckboxItemClick, { signal });
       });
     }
     if (this.radioItemElements.length) {
       this.radioItemElements.forEach(item => {
         item.setAttribute('role', 'menuitemradio');
-        item.addEventListener('click', this.handleRadioItemClick);
+        item.addEventListener('click', this.handleRadioItemClick, { signal });
       });
     }
     this.resetTabIndex();
@@ -208,9 +211,7 @@ export default class Menu {
       return;
     }
     const opacity = window.getComputedStyle(this.listElement).getPropertyValue('opacity');
-    if (this.animation) {
-      this.animation.cancel();
-    }
+    this.animation?.cancel();
     this.animation = this.listElement.animate(
       {
         opacity: open ? [opacity, '1'] : [opacity, '0'],
@@ -448,5 +449,20 @@ export default class Menu {
 
   close() {
     this.toggle(false);
+  }
+
+  destroy() {
+    if (this.destroyed) {
+      return;
+    }
+    this.rootElement.removeAttribute('data-menu-initialized');
+    this.submenus.forEach(submenu => {
+      submenu.close();
+      submenu.destroy();
+    });
+    this.submenus = [];
+    this.close();
+    this.eventController.abort();
+    this.destroyed = true;
   }
 }
