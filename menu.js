@@ -88,8 +88,8 @@ export default class Menu {
     this.handleListKeyDown = this.handleListKeyDown.bind(this);
     this.handleItemBlur = this.handleItemBlur.bind(this);
     this.handleItemFocus = this.handleItemFocus.bind(this);
-    this.handleItemPointerOut = this.handleItemPointerOut.bind(this);
-    this.handleItemPointerOver = this.handleItemPointerOver.bind(this);
+    this.handleItemPointerEnter = this.handleItemPointerEnter.bind(this);
+    this.handleItemPointerLeave = this.handleItemPointerLeave.bind(this);
     this.handleCheckboxItemClick = this.handleCheckboxItemClick.bind(this);
     this.handleRadioItemClick = this.handleRadioItemClick.bind(this);
     this.initialize();
@@ -129,8 +129,8 @@ export default class Menu {
       }
       item.addEventListener('blur', this.handleItemBlur, { signal });
       item.addEventListener('focus', this.handleItemFocus, { signal });
-      item.addEventListener('pointerout', this.handleItemPointerOut, { signal });
-      item.addEventListener('pointerover', this.handleItemPointerOver, { signal });
+      item.addEventListener('pointerenter', this.handleItemPointerEnter, { signal });
+      item.addEventListener('pointerleave', this.handleItemPointerLeave, { signal });
     });
     if (this.checkboxItemElements.length) {
       this.checkboxItemElements.forEach(item => {
@@ -415,11 +415,7 @@ export default class Menu {
     event.currentTarget.setAttribute('tabindex', '0');
   }
 
-  handleItemPointerOut() {
-    window.clearTimeout(this.submenuTimer);
-  }
-
-  handleItemPointerOver(event) {
+  handleItemPointerEnter(event) {
     window.clearTimeout(this.submenuTimer);
     const item = event.currentTarget;
     this.submenuTimer = window.setTimeout(() => {
@@ -429,6 +425,10 @@ export default class Menu {
       item.setAttribute('tabindex', '0');
       item.focus();
     }, this.settings.delay);
+  }
+
+  handleItemPointerLeave() {
+    window.clearTimeout(this.submenuTimer);
   }
 
   handleCheckboxItemClick(event) {

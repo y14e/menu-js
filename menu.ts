@@ -130,8 +130,8 @@ export default class Menu {
     this.handleListKeyDown = this.handleListKeyDown.bind(this);
     this.handleItemBlur = this.handleItemBlur.bind(this);
     this.handleItemFocus = this.handleItemFocus.bind(this);
-    this.handleItemPointerOut = this.handleItemPointerOut.bind(this);
-    this.handleItemPointerOver = this.handleItemPointerOver.bind(this);
+    this.handleItemPointeEnter = this.handleItemPointeEnter.bind(this);
+    this.handleItemPointerLeave = this.handleItemPointerLeave.bind(this);
     this.handleCheckboxItemClick = this.handleCheckboxItemClick.bind(this);
     this.handleRadioItemClick = this.handleRadioItemClick.bind(this);
     this.initialize();
@@ -171,8 +171,8 @@ export default class Menu {
       }
       item.addEventListener('blur', this.handleItemBlur, { signal });
       item.addEventListener('focus', this.handleItemFocus, { signal });
-      item.addEventListener('pointerout', this.handleItemPointerOut, { signal });
-      item.addEventListener('pointerover', this.handleItemPointerOver, { signal });
+      item.addEventListener('pointerenter', this.handleItemPointeEnter, { signal });
+      item.addEventListener('pointerleave', this.handleItemPointerLeave, { signal });
     });
     if (this.checkboxItemElements.length) {
       this.checkboxItemElements.forEach(item => {
@@ -457,11 +457,7 @@ export default class Menu {
     (event.currentTarget as HTMLElement).setAttribute('tabindex', '0');
   }
 
-  private handleItemPointerOut(): void {
-    window.clearTimeout(this.submenuTimer);
-  }
-
-  private handleItemPointerOver(event: PointerEvent): void {
+  private handleItemPointeEnter(event: PointerEvent): void {
     window.clearTimeout(this.submenuTimer);
     const item = event.currentTarget as HTMLElement;
     this.submenuTimer = window.setTimeout(() => {
@@ -471,6 +467,10 @@ export default class Menu {
       item.setAttribute('tabindex', '0');
       item.focus();
     }, this.settings.delay);
+  }
+
+  private handleItemPointerLeave(): void {
+    window.clearTimeout(this.submenuTimer);
   }
 
   private handleCheckboxItemClick(event: MouseEvent): void {
