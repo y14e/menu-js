@@ -49,13 +49,25 @@ export default class Menu {
       this.settings.animation.duration = 0;
     }
     this.isSubmenu = submenu;
-    this.triggerElement = this.rootElement.querySelector(this.settings.selector[!this.isSubmenu ? 'trigger' : 'item']);
-    this.listElement = this.rootElement.querySelector(this.settings.selector.list);
+    const trigger = this.rootElement.querySelector(this.settings.selector[!this.isSubmenu ? 'trigger' : 'item']);
+    if (!trigger) {
+      return;
+    }
+    this.triggerElement = trigger;
+    const list = this.rootElement.querySelector(this.settings.selector.list);
+    if (!list) {
+      return;
+    }
+    this.listElement = list;
     this.itemElements = [...this.listElement.querySelectorAll(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} *)`)];
     this.itemElementsByInitial = {};
     if (this.itemElements.length) {
       this.itemElements.forEach(item => {
-        const initial = item.textContent.trim().charAt(0).toLowerCase();
+        const text = item.textContent;
+        if (!text) {
+          return;
+        }
+        const initial = text.trim().charAt(0).toLowerCase();
         if (/\S/.test(initial)) {
           item.setAttribute('aria-keyshortcuts', initial);
           (this.itemElementsByInitial[initial] ||= []).push(item);
@@ -74,7 +86,11 @@ export default class Menu {
         if (!(group instanceof HTMLElement)) {
           return;
         }
-        (this.radioItemElementsByGroup.get(group) || this.radioItemElementsByGroup.set(group, []).get(group)).push(item);
+        const items = this.radioItemElementsByGroup.get(group) || this.radioItemElementsByGroup.set(group, []).get(group);
+        if (!items) {
+          return;
+        }
+        items.push(item);
       });
     }
     this.animation = null;
@@ -123,9 +139,12 @@ export default class Menu {
     this.listElement.setAttribute('role', 'menu');
     this.listElement.addEventListener('keydown', this.handleListKeyDown, { signal });
     this.itemElements.forEach(item => {
-      const root = item.parentElement;
-      if (root.querySelector(this.settings.selector.list)) {
-        this.submenus.push(new Menu(root, this.settings, true));
+      const parent = item.parentElement;
+      if (!parent) {
+        return;
+      }
+      if (parent.querySelector(this.settings.selector.list)) {
+        this.submenus.push(new Menu(parent, this.settings, true));
       }
       if ([this.checkboxItemElements, this.radioItemElements].every(list => !list.includes(item))) {
         item.setAttribute('role', 'menuitem');
@@ -326,7 +345,7 @@ export default class Menu {
     if (!length) {
       return;
     }
-    let index;
+    let index = 0;
     switch (key) {
       case 'Enter':
       case ' ':
@@ -455,8 +474,12 @@ export default class Menu {
     if (!(item instanceof HTMLElement)) {
       return;
     }
-    this.radioItemElementsByGroup.get(item.closest(this.settings.selector.group) || this.rootElement).forEach(element => {
-      element.setAttribute('aria-checked', String(element === item));
+    const items = this.radioItemElementsByGroup.get(item.closest(this.settings.selector.group) || this.rootElement);
+    if (!items) {
+      return;
+    }
+    items.forEach(_item => {
+      _item.setAttribute('aria-checked', String(_item === item));
     });
   }
 
