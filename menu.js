@@ -50,10 +50,9 @@ export default class Menu {
     }
     this.isSubmenu = submenu;
     const trigger = this.rootElement.querySelector(this.settings.selector[!this.isSubmenu ? 'trigger' : 'item']);
-    if (!trigger) {
-      return;
+    if (trigger) {
+      this.triggerElement = trigger;
     }
-    this.triggerElement = trigger;
     const list = this.rootElement.querySelector(this.settings.selector.list);
     if (!list) {
       return;
@@ -63,11 +62,7 @@ export default class Menu {
     this.itemElementsByInitial = {};
     if (this.itemElements.length) {
       this.itemElements.forEach(item => {
-        const text = item.textContent;
-        if (!text) {
-          return;
-        }
-        const initial = text.trim().charAt(0).toLowerCase();
+        const initial = (item.textContent || '').trim().charAt(0).toLowerCase();
         if (/\S/.test(initial)) {
           item.setAttribute('aria-keyshortcuts', initial);
           (this.itemElementsByInitial[initial] ||= []).push(item);
@@ -84,13 +79,12 @@ export default class Menu {
           group = this.rootElement;
         }
         if (!(group instanceof HTMLElement)) {
-          return;
+          throw new TypeError();
         }
         const items = this.radioItemElementsByGroup.get(group) || this.radioItemElementsByGroup.set(group, []).get(group);
-        if (!items) {
-          return;
+        if (items) {
+          items.push(item);
         }
-        items.push(item);
       });
     }
     this.animation = null;
@@ -305,7 +299,10 @@ export default class Menu {
 
   handleRootFocusIn(event) {
     const previous = event.relatedTarget;
-    if (!(previous instanceof HTMLElement) || (this.rootElement.contains(previous) && this.rootElement.contains(this.getActiveElement()))) {
+    if (previous && !(previous instanceof HTMLElement)) {
+      throw new TypeError();
+    }
+    if (this.rootElement.contains(previous) && this.rootElement.contains(this.getActiveElement())) {
       return;
     }
     this.resetTabIndex(true);
@@ -313,7 +310,10 @@ export default class Menu {
 
   handleRootFocusOut(event) {
     const next = event.relatedTarget;
-    if (!(next instanceof HTMLElement) || this.rootElement.contains(next)) {
+    if (next && !(next instanceof HTMLElement)) {
+      throw new TypeError();
+    }
+    if (this.rootElement.contains(next)) {
       return;
     }
     this.resetTabIndex();
@@ -429,7 +429,7 @@ export default class Menu {
   handleItemBlur(event) {
     const item = event.currentTarget;
     if (!(item instanceof HTMLElement)) {
-      return;
+      throw new TypeError();
     }
     item.setAttribute('tabindex', '-1');
   }
@@ -437,7 +437,7 @@ export default class Menu {
   handleItemFocus(event) {
     const item = event.currentTarget;
     if (!(item instanceof HTMLElement)) {
-      return;
+      throw new TypeError();
     }
     item.setAttribute('tabindex', '0');
   }
@@ -446,7 +446,7 @@ export default class Menu {
     window.clearTimeout(this.submenuTimer);
     const item = event.currentTarget;
     if (!(item instanceof HTMLElement)) {
-      return;
+      throw new TypeError();
     }
     this.submenuTimer = window.setTimeout(() => {
       if (this.submenus.length) {
@@ -464,7 +464,7 @@ export default class Menu {
   handleCheckboxItemClick(event) {
     const item = event.currentTarget;
     if (!(item instanceof HTMLElement)) {
-      return;
+      throw new TypeError();
     }
     item.setAttribute('aria-checked', String(item.getAttribute('aria-checked') === 'false'));
   }
@@ -472,15 +472,14 @@ export default class Menu {
   handleRadioItemClick(event) {
     const item = event.currentTarget;
     if (!(item instanceof HTMLElement)) {
-      return;
+      throw new TypeError();
     }
     const items = this.radioItemElementsByGroup.get(item.closest(this.settings.selector.group) || this.rootElement);
-    if (!items) {
-      return;
+    if (items) {
+      items.forEach(_item => {
+        _item.setAttribute('aria-checked', String(_item === item));
+      });
     }
-    items.forEach(_item => {
-      _item.setAttribute('aria-checked', String(_item === item));
-    });
   }
 
   open() {
