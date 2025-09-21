@@ -91,9 +91,9 @@ export default class Menu {
       this.settings.animation.duration = 0;
     }
     this.isSubmenu = submenu;
-    this.triggerElement = this.rootElement.querySelector(this.settings.selector[!this.isSubmenu ? 'trigger' : 'item']) as HTMLElement;
-    this.listElement = this.rootElement.querySelector(this.settings.selector.list) as HTMLElement;
-    this.itemElements = [...this.listElement.querySelectorAll(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} *)`)] as HTMLElement[];
+    this.triggerElement = this.rootElement.querySelector<HTMLElement>(this.settings.selector[!this.isSubmenu ? 'trigger' : 'item'])!;
+    this.listElement = this.rootElement.querySelector<HTMLElement>(this.settings.selector.list)!;
+    this.itemElements = [...this.listElement.querySelectorAll<HTMLElement>(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} *)`)];
     this.itemElementsByInitial = {};
     if (this.itemElements.length) {
       this.itemElements.forEach(item => {
@@ -109,9 +109,12 @@ export default class Menu {
     this.radioItemElementsByGroup = new Map();
     if (this.radioItemElements.length) {
       this.radioItemElements.forEach(item => {
-        let group = item.closest(this.settings.selector.group) as HTMLElement;
+        let group = item.closest(this.settings.selector.group);
         if (!group || !this.rootElement.contains(group)) {
           group = this.rootElement;
+        }
+        if (!(group instanceof HTMLElement)) {
+          return;
         }
         (this.radioItemElementsByGroup.get(group) || this.radioItemElementsByGroup.set(group, []).get(group))!.push(item);
       });
@@ -130,7 +133,7 @@ export default class Menu {
     this.handleListKeyDown = this.handleListKeyDown.bind(this);
     this.handleItemBlur = this.handleItemBlur.bind(this);
     this.handleItemFocus = this.handleItemFocus.bind(this);
-    this.handleItemPointeEnter = this.handleItemPointeEnter.bind(this);
+    this.handleItemPointerEnter = this.handleItemPointerEnter.bind(this);
     this.handleItemPointerLeave = this.handleItemPointerLeave.bind(this);
     this.handleCheckboxItemClick = this.handleCheckboxItemClick.bind(this);
     this.handleRadioItemClick = this.handleRadioItemClick.bind(this);
@@ -171,7 +174,7 @@ export default class Menu {
       }
       item.addEventListener('blur', this.handleItemBlur, { signal });
       item.addEventListener('focus', this.handleItemFocus, { signal });
-      item.addEventListener('pointerenter', this.handleItemPointeEnter, { signal });
+      item.addEventListener('pointerenter', this.handleItemPointerEnter, { signal });
       item.addEventListener('pointerleave', this.handleItemPointerLeave, { signal });
     });
     if (this.checkboxItemElements.length) {
@@ -195,7 +198,7 @@ export default class Menu {
 
   private getActiveElement(): HTMLElement | null {
     let active: Element | null = document.activeElement;
-    while (active instanceof HTMLElement && active.shadowRoot?.activeElement) {
+    while (active && active.shadowRoot?.activeElement) {
       active = active.shadowRoot.activeElement;
     }
     return active instanceof HTMLElement ? active : null;
@@ -324,14 +327,16 @@ export default class Menu {
   }
 
   private handleRootFocusIn(event: FocusEvent): void {
-    if (this.rootElement.contains(event.relatedTarget as HTMLElement) && this.rootElement.contains(this.getActiveElement())) {
+    const previous = event.relatedTarget;
+    if (!(previous instanceof HTMLElement) || (this.rootElement.contains(previous) && this.rootElement.contains(this.getActiveElement()))) {
       return;
     }
     this.resetTabIndex(true);
   }
 
   private handleRootFocusOut(event: FocusEvent): void {
-    if (this.rootElement.contains(event.relatedTarget as HTMLElement)) {
+    const next = event.relatedTarget;
+    if (!(next instanceof HTMLElement) || this.rootElement.contains(next)) {
       return;
     }
     this.resetTabIndex();
@@ -390,12 +395,7 @@ export default class Menu {
     if (this.isSubmenu) {
       keys.push('ArrowLeft');
     }
-    // prettier-ignore
-    if (
-      !keys.includes(key)
-      && !(shiftKey && key === 'Tab')
-      && !(/^\S$/i.test(key) && this.itemElementsByInitial[key.toLowerCase()]?.find(this.isFocusable))
-    ) {
+    if (!keys.includes(key) && !(shiftKey && key === 'Tab') && !(/^\S$/i.test(key) && this.itemElementsByInitial[key.toLowerCase()]?.find(this.isFocusable))) {
       return;
     }
     if (!shiftKey) {
@@ -450,16 +450,27 @@ export default class Menu {
   }
 
   private handleItemBlur(event: FocusEvent): void {
-    (event.currentTarget as HTMLElement).setAttribute('tabindex', '-1');
+    const item = event.currentTarget;
+    if (!(item instanceof HTMLElement)) {
+      return;
+    }
+    item.setAttribute('tabindex', '-1');
   }
 
   private handleItemFocus(event: FocusEvent): void {
-    (event.currentTarget as HTMLElement).setAttribute('tabindex', '0');
+    const item = event.currentTarget;
+    if (!(item instanceof HTMLElement)) {
+      return;
+    }
+    item.setAttribute('tabindex', '0');
   }
 
-  private handleItemPointeEnter(event: PointerEvent): void {
+  private handleItemPointerEnter(event: PointerEvent): void {
     window.clearTimeout(this.submenuTimer);
-    const item = event.currentTarget as HTMLElement;
+    const item = event.currentTarget;
+    if (!(item instanceof HTMLElement)) {
+      return;
+    }
     this.submenuTimer = window.setTimeout(() => {
       if (this.submenus.length) {
         this.submenus.forEach(submenu => submenu.toggle(submenu.triggerElement === item));
@@ -474,14 +485,20 @@ export default class Menu {
   }
 
   private handleCheckboxItemClick(event: MouseEvent): void {
-    const item = event.currentTarget as HTMLElement;
+    const item = event.currentTarget;
+    if (!(item instanceof HTMLElement)) {
+      return;
+    }
     item.setAttribute('aria-checked', String(item.getAttribute('aria-checked') === 'false'));
   }
 
   private handleRadioItemClick(event: MouseEvent): void {
-    const target = event.currentTarget as HTMLElement;
-    this.radioItemElementsByGroup.get(target.closest(this.settings.selector.group) || this.rootElement)!.forEach(item => {
-      item.setAttribute('aria-checked', String(item === target));
+    const item = event.currentTarget;
+    if (!(item instanceof HTMLElement)) {
+      return;
+    }
+    this.radioItemElementsByGroup.get(item.closest(this.settings.selector.group) || this.rootElement)!.forEach(element => {
+      element.setAttribute('aria-checked', String(element === item));
     });
   }
 

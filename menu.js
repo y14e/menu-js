@@ -71,6 +71,9 @@ export default class Menu {
         if (!group || !this.rootElement.contains(group)) {
           group = this.rootElement;
         }
+        if (!(group instanceof HTMLElement)) {
+          return;
+        }
         (this.radioItemElementsByGroup.get(group) || this.radioItemElementsByGroup.set(group, []).get(group)).push(item);
       });
     }
@@ -153,7 +156,7 @@ export default class Menu {
 
   getActiveElement() {
     let active = document.activeElement;
-    while (active instanceof HTMLElement && active.shadowRoot?.activeElement) {
+    while (active && active.shadowRoot?.activeElement) {
       active = active.shadowRoot.activeElement;
     }
     return active instanceof HTMLElement ? active : null;
@@ -282,14 +285,16 @@ export default class Menu {
   }
 
   handleRootFocusIn(event) {
-    if (this.rootElement.contains(event.relatedTarget) && this.rootElement.contains(this.getActiveElement())) {
+    const previous = event.relatedTarget;
+    if (!(previous instanceof HTMLElement) || (this.rootElement.contains(previous) && this.rootElement.contains(this.getActiveElement()))) {
       return;
     }
     this.resetTabIndex(true);
   }
 
   handleRootFocusOut(event) {
-    if (this.rootElement.contains(event.relatedTarget)) {
+    const next = event.relatedTarget;
+    if (!(next instanceof HTMLElement) || this.rootElement.contains(next)) {
       return;
     }
     this.resetTabIndex();
@@ -348,12 +353,7 @@ export default class Menu {
     if (this.isSubmenu) {
       keys.push('ArrowLeft');
     }
-    // prettier-ignore
-    if (
-      !keys.includes(key)
-      && !(shiftKey && key === 'Tab')
-      && !(/^\S$/i.test(key) && this.itemElementsByInitial[key.toLowerCase()]?.find(this.isFocusable))
-    ) {
+    if (!keys.includes(key) && !(shiftKey && key === 'Tab') && !(/^\S$/i.test(key) && this.itemElementsByInitial[key.toLowerCase()]?.find(this.isFocusable))) {
       return;
     }
     if (!shiftKey) {
@@ -408,16 +408,27 @@ export default class Menu {
   }
 
   handleItemBlur(event) {
-    event.currentTarget.setAttribute('tabindex', '-1');
+    const item = event.currentTarget;
+    if (!(item instanceof HTMLElement)) {
+      return;
+    }
+    item.setAttribute('tabindex', '-1');
   }
 
   handleItemFocus(event) {
-    event.currentTarget.setAttribute('tabindex', '0');
+    const item = event.currentTarget;
+    if (!(item instanceof HTMLElement)) {
+      return;
+    }
+    item.setAttribute('tabindex', '0');
   }
 
   handleItemPointerEnter(event) {
     window.clearTimeout(this.submenuTimer);
     const item = event.currentTarget;
+    if (!(item instanceof HTMLElement)) {
+      return;
+    }
     this.submenuTimer = window.setTimeout(() => {
       if (this.submenus.length) {
         this.submenus.forEach(submenu => submenu.toggle(submenu.triggerElement === item));
@@ -433,13 +444,19 @@ export default class Menu {
 
   handleCheckboxItemClick(event) {
     const item = event.currentTarget;
+    if (!(item instanceof HTMLElement)) {
+      return;
+    }
     item.setAttribute('aria-checked', String(item.getAttribute('aria-checked') === 'false'));
   }
 
   handleRadioItemClick(event) {
-    const target = event.currentTarget;
-    this.radioItemElementsByGroup.get(target.closest(this.settings.selector.group) || this.rootElement).forEach(item => {
-      item.setAttribute('aria-checked', String(item === target));
+    const item = event.currentTarget;
+    if (!(item instanceof HTMLElement)) {
+      return;
+    }
+    this.radioItemElementsByGroup.get(item.closest(this.settings.selector.group) || this.rootElement).forEach(element => {
+      element.setAttribute('aria-checked', String(element === item));
     });
   }
 
