@@ -95,27 +95,23 @@ export default class Menu {
     this.listElement = this.rootElement.querySelector<HTMLElement>(this.settings.selector.list)!;
     this.itemElements = [...this.listElement.querySelectorAll<HTMLElement>(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} *)`)];
     this.itemElementsByInitial = {};
-    if (this.itemElements.length) {
-      this.itemElements.forEach(item => {
-        const initial = item.textContent.trim().charAt(0).toLowerCase();
-        if (/\S/.test(initial)) {
-          item.setAttribute('aria-keyshortcuts', initial);
-          (this.itemElementsByInitial[initial] ||= []).push(item);
-        }
-      });
-    }
+    this.itemElements.forEach(item => {
+      const initial = item.textContent.trim().charAt(0).toLowerCase();
+      if (/\S/.test(initial)) {
+        item.setAttribute('aria-keyshortcuts', initial);
+        (this.itemElementsByInitial[initial] ||= []).push(item);
+      }
+    });
     this.checkboxItemElements = this.itemElements.filter(item => item.getAttribute('role') === 'menuitemcheckbox');
     this.radioItemElements = this.itemElements.filter(item => item.getAttribute('role') === 'menuitemradio');
     this.radioItemElementsByGroup = new Map();
-    if (this.radioItemElements.length) {
-      this.radioItemElements.forEach(item => {
-        let group = item.closest(this.settings.selector.group) as HTMLElement;
-        if (!group || !this.rootElement.contains(group)) {
-          group = this.rootElement;
-        }
-        this.radioItemElementsByGroup.get(group) || this.radioItemElementsByGroup.set(group, []).get(group)!.push(item);
-      });
-    }
+    this.radioItemElements.forEach(item => {
+      let group = item.closest(this.settings.selector.group) as HTMLElement;
+      if (!group || !this.rootElement.contains(group)) {
+        group = this.rootElement;
+      }
+      this.radioItemElementsByGroup.get(group) || this.radioItemElementsByGroup.set(group, []).get(group)!.push(item);
+    });
     this.animation = null;
     this.submenus = [];
     this.submenuTimer = 0;
@@ -174,18 +170,14 @@ export default class Menu {
       item.addEventListener('pointerenter', this.handleItemPointerEnter, { signal });
       item.addEventListener('pointerleave', this.handleItemPointerLeave, { signal });
     });
-    if (this.checkboxItemElements.length) {
-      this.checkboxItemElements.forEach(item => {
-        item.setAttribute('role', 'menuitemcheckbox');
-        item.addEventListener('click', this.handleCheckboxItemClick, { signal });
-      });
-    }
-    if (this.radioItemElements.length) {
-      this.radioItemElements.forEach(item => {
-        item.setAttribute('role', 'menuitemradio');
-        item.addEventListener('click', this.handleRadioItemClick, { signal });
-      });
-    }
+    this.checkboxItemElements.forEach(item => {
+      item.setAttribute('role', 'menuitemcheckbox');
+      item.addEventListener('click', this.handleCheckboxItemClick, { signal });
+    });
+    this.radioItemElements.forEach(item => {
+      item.setAttribute('role', 'menuitemradio');
+      item.addEventListener('click', this.handleRadioItemClick, { signal });
+    });
     this.resetTabIndex();
     if (!this.isSubmenu) {
       this.rootElement.setAttribute('data-menu-initialized', '');
@@ -207,14 +199,10 @@ export default class Menu {
 
   private resetTabIndex(force = false): void {
     if (this.triggerElement || force) {
-      this.itemElements.forEach(item => {
-        item.setAttribute('tabindex', '-1');
-      });
+      this.itemElements.forEach(item => item.setAttribute('tabindex', '-1'));
     } else {
       const first = this.itemElements.find(item => this.isFocusable(item));
-      this.itemElements.forEach(item => {
-        item.setAttribute('tabindex', item === first ? '0' : '-1');
-      });
+      this.itemElements.forEach(item => item.setAttribute('tabindex', item === first ? '0' : '-1'));
     }
   }
 
@@ -462,9 +450,7 @@ export default class Menu {
 
   private handleRadioItemClick(event: MouseEvent): void {
     const item = event.currentTarget as HTMLElement;
-    this.radioItemElementsByGroup.get(item.closest(this.settings.selector.group) || this.rootElement)!.forEach(_item => {
-      _item.setAttribute('aria-checked', String(_item === item));
-    });
+    this.radioItemElementsByGroup.get(item.closest(this.settings.selector.group) || this.rootElement)!.forEach(_item => _item.setAttribute('aria-checked', String(_item === item)));
   }
 
   open(): void {
