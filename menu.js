@@ -176,7 +176,7 @@ export default class Menu {
       if (!open) {
         this.listElement.removeAttribute('data-menu-placement');
         this.listElement.style.setProperty('display', 'none');
-        if (this.settings.popover.transformOrigin) this.listElement.style.removeProperty('transform-origin');
+        ['left', 'top', 'transform-origin'].forEach(name => this.listElement.style.removeProperty(name));
       }
       this.listElement.style.removeProperty('opacity');
     });
