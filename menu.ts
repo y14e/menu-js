@@ -1,4 +1,4 @@
-import { Middleware, MiddlewareData, Placement, arrow, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
+import { Middleware, MiddlewareData, Placement, Side, arrow, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
 
 type MenuOptions = {
   animation: {
@@ -259,11 +259,11 @@ export default class Menu {
               left: '100% 50%',
               'left-start': '100% 0',
               'left-end': '100% 100%',
-            }[placement as 'top' | 'top-start' | 'top-end' | 'right' | 'right-start' | 'right-end' | 'bottom' | 'bottom-start' | 'bottom-end' | 'left' | 'left-start' | 'left-end'],
+            }[placement as Placement],
           );
         }
-        const { x: arrowX, y: arrowY } = middlewareData.arrow! as Partial<{ x: number; y: number }>;
-        const side = placement.split('-')[0] as 'top' | 'right' | 'bottom' | 'left';
+        const { x: arrowX, y: arrowY } = middlewareData.arrow!;
+        const side = placement.split('-')[0] as Side;
         Object.assign(this.arrowElement.style, {
           left: arrowX ? `${arrowX}px` : '',
           top: arrowY ? `${arrowY}px` : '',
