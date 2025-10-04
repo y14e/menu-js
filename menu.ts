@@ -1,4 +1,4 @@
-import { Middleware, Placement, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
+import { Middleware, MiddlewareData, Placement, arrow, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
 
 type MenuOptions = {
   animation: {
@@ -38,6 +38,7 @@ export default class Menu {
   private checkboxItemElements!: HTMLElement[];
   private radioItemElements!: HTMLElement[];
   private radioItemElementsByGroup!: Map<HTMLElement, HTMLElement[]>;
+  private arrowElement!: HTMLElement;
   private animation!: Animation | null;
   private submenus!: Menu[];
   private submenuTimer!: number;
@@ -106,6 +107,10 @@ export default class Menu {
       if (!group || !this.rootElement.contains(group)) group = this.rootElement;
       (this.radioItemElementsByGroup.get(group) || this.radioItemElementsByGroup.set(group, []).get(group))!.push(item);
     });
+    this.arrowElement = document.createElement('div');
+    this.arrowElement.setAttribute('data-menu-arrow', '');
+    this.listElement.appendChild(this.arrowElement);
+    (['menu', 'submenu'] as const).forEach(name => this.settings.popover[name].middleware!.push(arrow({ element: this.arrowElement })));
     this.animation = null;
     this.submenus = [];
     this.submenuTimer = 0;
@@ -232,7 +237,7 @@ export default class Menu {
 
   private updatePopover(): void {
     const compute = () => {
-      computePosition(this.triggerElement, this.listElement, this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu']).then(({ x, y, placement }) => {
+      computePosition(this.triggerElement, this.listElement, this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu']).then(({ x, y, placement, middlewareData }: { x: number; y: number; placement: Placement; middlewareData: MiddlewareData }) => {
         Object.assign(this.listElement.style, {
           left: `${x}px`,
           top: `${y}px`,
@@ -254,9 +259,22 @@ export default class Menu {
               left: '100% 50%',
               'left-start': '100% 0',
               'left-end': '100% 100%',
-            }[placement],
+            }[placement as 'top' | 'top-start' | 'top-end' | 'right' | 'right-start' | 'right-end' | 'bottom' | 'bottom-start' | 'bottom-end' | 'left' | 'left-start' | 'left-end'],
           );
         }
+        const { x: arrowX, y: arrowY } = middlewareData.arrow! as Partial<{ x: number; y: number }>;
+        const side = placement.split('-')[0] as 'top' | 'right' | 'bottom' | 'left';
+        Object.assign(this.arrowElement.style, {
+          left: arrowX ? `${arrowX}px` : '',
+          top: arrowY ? `${arrowY}px` : '',
+          transform: `rotate(${side === 'top' ? 225 : side === 'right' ? 315 : side === 'bottom' ? 45 : 135}deg)`,
+          [{
+            top: 'bottom',
+            right: 'left',
+            bottom: 'top',
+            left: 'right',
+          }[side]]: `${-this.arrowElement.offsetWidth / 2}px`,
+        });
       });
     };
     compute();

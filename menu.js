@@ -1,4 +1,4 @@
-import { autoUpdate, computePosition, flip, offset, shift } from 'https://cdn.jsdelivr.net/npm/@floating-ui/dom@1.7.4/+esm';
+import { arrow, autoUpdate, computePosition, flip, offset, shift } from 'https://cdn.jsdelivr.net/npm/@floating-ui/dom@1.7.4/+esm';
 
 export default class Menu {
   static menus = [];
@@ -62,6 +62,10 @@ export default class Menu {
       if (!group || !this.rootElement.contains(group)) group = this.rootElement;
       (this.radioItemElementsByGroup.get(group) || this.radioItemElementsByGroup.set(group, []).get(group)).push(item);
     });
+    this.arrowElement = document.createElement('div');
+    this.arrowElement.setAttribute('data-menu-arrow', '');
+    this.listElement.appendChild(this.arrowElement);
+    ['menu', 'submenu'].forEach(name => this.settings.popover[name].middleware.push(arrow({ element: this.arrowElement })));
     this.animation = null;
     this.submenus = [];
     this.submenuTimer = 0;
@@ -188,7 +192,7 @@ export default class Menu {
 
   updatePopover() {
     const compute = () => {
-      computePosition(this.triggerElement, this.listElement, this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu']).then(({ x, y, placement }) => {
+      computePosition(this.triggerElement, this.listElement, this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu']).then(({ x, y, placement, middlewareData }) => {
         Object.assign(this.listElement.style, {
           left: `${x}px`,
           top: `${y}px`,
@@ -213,6 +217,19 @@ export default class Menu {
             }[placement],
           );
         }
+        const { x: arrowX, y: arrowY } = middlewareData.arrow;
+        const side = placement.split('-')[0];
+        Object.assign(this.arrowElement.style, {
+          left: arrowX ? `${arrowX}px` : '',
+          top: arrowY ? `${arrowY}px` : '',
+          transform: `rotate(${side === 'top' ? 225 : side === 'right' ? 315 : side === 'bottom' ? 45 : 135}deg)`,
+          [{
+            top: 'bottom',
+            right: 'left',
+            bottom: 'top',
+            left: 'right',
+          }[side]]: `${-this.arrowElement.offsetWidth / 2}px`,
+        });
       });
     };
     compute();
