@@ -193,10 +193,10 @@ export default class Menu {
 
   updatePopover() {
     const compute = () => {
-      computePosition(this.triggerElement, this.listElement, this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu']).then(({ x, y, placement, middlewareData }) => {
+      computePosition(this.triggerElement, this.listElement, this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu']).then(({ x: listX, y: listY, placement, middlewareData }) => {
         Object.assign(this.listElement.style, {
-          left: `${x}px`,
-          top: `${y}px`,
+          left: `${listX}px`,
+          top: `${listY}px`,
         });
         this.listElement.setAttribute('data-menu-placement', placement);
         if (this.settings.popover.transformOrigin) {
