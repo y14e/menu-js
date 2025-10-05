@@ -11,10 +11,12 @@ export default class Menu {
       delay: 300,
       popover: {
         menu: {
+          arrow: true,
           middleware: [flip(), offset(), shift()],
           placement: 'bottom-start',
         },
         submenu: {
+          arrow: true,
           middleware: [flip(), offset(), shift()],
           placement: 'right-start',
         },
@@ -62,10 +64,15 @@ export default class Menu {
       if (!group || !this.rootElement.contains(group)) group = this.rootElement;
       (this.radioItemElementsByGroup.get(group) || this.radioItemElementsByGroup.set(group, []).get(group)).push(item);
     });
-    this.arrowElement = document.createElement('div');
-    this.arrowElement.setAttribute('data-menu-arrow', '');
-    this.listElement.appendChild(this.arrowElement);
-    ['menu', 'submenu'].forEach(name => this.settings.popover[name].middleware.push(arrow({ element: this.arrowElement })));
+    const setting = this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu'];
+    if (setting.arrow) {
+      this.arrowElement = document.createElement('div');
+      this.arrowElement.setAttribute('data-menu-arrow', '');
+      this.listElement.appendChild(this.arrowElement);
+      setting.middleware.push(arrow({ element: this.arrowElement }));
+    } else {
+      this.arrowElement = null;
+    }
     this.animation = null;
     this.submenus = [];
     this.submenuTimer = 0;
@@ -218,12 +225,13 @@ export default class Menu {
             }[placement],
           );
         }
+        if (!this.arrowElement) return;
         const { x: arrowX, y: arrowY } = middlewareData.arrow;
         const side = placement.split('-')[0];
         Object.assign(this.arrowElement.style, {
           left: arrowX ? `${arrowX}px` : '',
           rotate: `${side === 'top' ? 225 : side === 'right' ? 315 : side === 'bottom' ? 45 : 135}deg`,
-          top: arrowY ? `${arrowY}px` : '',
+          top: arrowY ? `${arrowY - this.arrowElement.offsetHeight / 2}px` : '',
           [{
             top: 'bottom',
             right: 'left',
