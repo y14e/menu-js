@@ -181,6 +181,7 @@ export default class Menu {
         this.listElement.removeAttribute('data-menu-placement');
         this.listElement.style.setProperty('display', 'none');
         ['left', 'top', 'transform-origin'].forEach(name => this.listElement.style.removeProperty(name));
+        if (this.arrowElement) ['left', 'rotate', 'top'].forEach(name => this.arrowElement.style.removeProperty(name));
       }
       this.listElement.style.removeProperty('opacity');
     });
@@ -221,8 +222,8 @@ export default class Menu {
         const side = placement.split('-')[0];
         Object.assign(this.arrowElement.style, {
           left: arrowX ? `${arrowX}px` : '',
+          rotate: `${side === 'top' ? 225 : side === 'right' ? 315 : side === 'bottom' ? 45 : 135}deg`,
           top: arrowY ? `${arrowY}px` : '',
-          transform: `rotate(${side === 'top' ? 225 : side === 'right' ? 315 : side === 'bottom' ? 45 : 135}deg)`,
           [{
             top: 'bottom',
             right: 'left',
