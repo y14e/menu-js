@@ -8,3 +8,6 @@ const myMenu = new Menu(...);
 ```
 ## Demo
 https://y14e.github.io/menu-js/
+
+## Credits
+* [Floating UI](https://floating-ui.com/)
