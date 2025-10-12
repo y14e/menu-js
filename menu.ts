@@ -283,7 +283,7 @@ export default class Menu {
             right: 'left',
             bottom: 'top',
             left: 'right',
-          }[side]]: `${-this.arrowElement.offsetWidth / 2}px`,
+          }[side]]: `${this.arrowElement.offsetWidth / -2}px`,
         });
       });
     };
