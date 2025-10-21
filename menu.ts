@@ -1,6 +1,6 @@
 import { Middleware, MiddlewareData, Placement, Side, arrow, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
 
-type MenuOptions = {
+interface MenuOptions {
   animation: {
     duration: number;
   };
@@ -18,13 +18,13 @@ type MenuOptions = {
     radioItem: string;
     trigger: string;
   };
-};
+}
 
-type MenuPopoverOptions = {
+interface MenuPopoverOptions {
   arrow: boolean;
   middleware: Middleware[];
   placement: Placement;
-};
+}
 
 export default class Menu {
   private static menus: Menu[] = [];
