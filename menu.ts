@@ -389,8 +389,7 @@ export default class Menu {
         const foundIndex = targetFocusables.findIndex(focusable => focusables.indexOf(focusable) > currentIndex);
         newIndex = foundIndex !== -1 ? foundIndex : 0;
     }
-    const focusable = targetFocusables[newIndex];
-    focusable.focus();
+    targetFocusables[newIndex].focus();
   }
 
   private handleItemBlur(event: FocusEvent): void {
