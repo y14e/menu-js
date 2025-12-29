@@ -304,7 +304,11 @@ export default class Menu {
     if (!this.triggerElement && shiftKey && key === 'Tab') return;
     const keys = ['Tab', 'Enter', 'Escape', ' ', 'End', 'Home', 'ArrowUp', 'ArrowDown'];
     if (this.isSubmenu) keys.push('ArrowLeft');
-    if (!keys.includes(key) && !(shiftKey && key === 'Tab') && !(/^\S$/i.test(key) && this.itemElementsByInitial[key.toLowerCase()]?.find(this.isFocusable))) return;
+    if (!keys.includes(key) && !(shiftKey && key === 'Tab') && !(/^\S$/i.test(key) && this.itemElementsByInitial[key.toLowerCase()]?.find(this.isFocusable))) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
     if (!shiftKey) {
       if (key === 'Tab') return;
       event.stopPropagation();
