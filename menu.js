@@ -302,18 +302,16 @@ export default class Menu {
   handleListKeyDown(event) {
     const { shiftKey, key } = event;
     if (!this.triggerElement && shiftKey && key === 'Tab') return;
-    const keys = ['Tab', 'Enter', 'Escape', ' ', 'End', 'Home', 'ArrowUp', 'ArrowDown'];
-    if (this.isSubmenu) keys.push('ArrowLeft');
-    if (!keys.includes(key) && !(shiftKey && key === 'Tab') && !(/^\S$/i.test(key) && this.itemElementsByInitial[key.toLowerCase()]?.find(this.isFocusable))) {
+    const keys = new Set(['Tab', 'Enter', 'Escape', ' ', 'End', 'Home', ...(this.isSubmenu ? ['ArrowLeft'] : []), 'ArrowUp', 'ArrowDown']);
+    const isCharKey = /^\S$/i.test(key);
+    if ((!keys.has(key) && !isCharKey) || (isCharKey && !this.itemElementsByInitial[key.toLowerCase()]?.some(this.isFocusable))) {
       event.preventDefault();
       event.stopPropagation();
       return;
     }
-    if (!shiftKey) {
-      if (key === 'Tab') return;
-      event.stopPropagation();
-    }
+    if (!shiftKey && key === 'Tab') return;
     event.preventDefault();
+    event.stopPropagation();
     const focusables = this.itemElements.filter(this.isFocusable);
     const length = focusables.length;
     const active = this.getActiveElement();
