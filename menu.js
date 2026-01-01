@@ -301,15 +301,14 @@ export default class Menu {
 
   handleListKeyDown(event) {
     const { shiftKey, key } = event;
-    if (!this.triggerElement && shiftKey && key === 'Tab') return;
-    const keys = new Set(['Tab', 'Enter', 'Escape', ' ', 'End', 'Home', ...(this.isSubmenu ? ['ArrowLeft'] : []), 'ArrowUp', 'ArrowDown']);
-    const isCharKey = /^\S$/i.test(key);
-    if ((!keys.has(key) && !isCharKey) || (isCharKey && !this.itemElementsByInitial[key.toLowerCase()]?.some(this.isFocusable))) {
-      event.preventDefault();
-      event.stopPropagation();
-      return;
+    if (key === 'Tab' && ((!this.triggerElement && shiftKey) || !shiftKey)) return;
+    if (!['Enter', 'Escape', ' ', 'End', 'Home', ...(this.isSubmenu ? ['ArrowLeft'] : []), 'ArrowUp', 'ArrowDown'].includes(key)) {
+      const isCharKey = /^\S$/i.test(key);
+      if (!isCharKey || !this.itemElementsByInitial[key.toLowerCase()]?.some(this.isFocusable)) {
+        if (isCharKey) event.stopPropagation();
+        return;
+      }
     }
-    if (!shiftKey && key === 'Tab') return;
     event.preventDefault();
     event.stopPropagation();
     const focusables = this.itemElements.filter(this.isFocusable);
