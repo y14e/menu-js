@@ -48,7 +48,9 @@ export default class Menu {
   private cleanupPopover!: Function | null;
 
   constructor(root: HTMLElement, options?: Partial<MenuOptions>, submenu = false) {
-    if (!root) return;
+    if (!root) {
+      return;
+    }
     this.rootElement = root;
     this.defaults = {
       animation: { duration: 300 },
@@ -107,7 +109,9 @@ export default class Menu {
     this.radioItemElementsByGroup = new Map();
     this.radioItemElements.forEach((item) => {
       let group = item.closest(this.settings.selector.group) as HTMLElement;
-      if (!group || !this.rootElement.contains(group)) group = this.rootElement;
+      if (!group || !this.rootElement.contains(group)) {
+        group = this.rootElement;
+      }
       (this.radioItemElementsByGroup.get(group) || this.radioItemElementsByGroup.set(group, []).get(group))!.push(item);
     });
     const setting = this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu'];
@@ -141,7 +145,9 @@ export default class Menu {
   }
 
   private initialize(): void {
-    if (!this.listElement || !this.itemElements.length) return;
+    if (!this.listElement || !this.itemElements.length) {
+      return;
+    }
     const { signal } = this.eventController;
     document.addEventListener('pointerdown', this.handleOutsidePointerDown, { signal });
     this.rootElement.addEventListener('focusin', this.handleRootFocusIn, { signal });
@@ -153,7 +159,9 @@ export default class Menu {
       this.triggerElement.setAttribute('aria-haspopup', 'true');
       this.triggerElement.id ||= `menu-trigger-${id}`;
       this.triggerElement.setAttribute('tabindex', this.isFocusable(this.triggerElement) && !this.isSubmenu ? '0' : '-1');
-      if (!this.isFocusable(this.triggerElement)) this.triggerElement.style.setProperty('pointer-events', 'none');
+      if (!this.isFocusable(this.triggerElement)) {
+        this.triggerElement.style.setProperty('pointer-events', 'none');
+      }
       this.triggerElement.addEventListener('click', this.handleTriggerClick, { signal });
       this.triggerElement.addEventListener('keydown', this.handleTriggerKeyDown, { signal });
       this.listElement.setAttribute('aria-labelledby', `${this.listElement.getAttribute('aria-labelledby') || ''} ${this.triggerElement.id}`.trim());
@@ -162,8 +170,12 @@ export default class Menu {
     this.listElement.addEventListener('keydown', this.handleListKeyDown, { signal });
     this.itemElements.forEach((item) => {
       const parent = item.parentElement as HTMLElement;
-      if (parent.querySelector(this.settings.selector.list)) this.submenus.push(new Menu(parent, this.settings, true));
-      if ([this.checkboxItemElements, this.radioItemElements].every((list) => !list.includes(item))) item.setAttribute('role', 'menuitem');
+      if (parent.querySelector(this.settings.selector.list)) {
+        this.submenus.push(new Menu(parent, this.settings, true));
+      }
+      if ([this.checkboxItemElements, this.radioItemElements].every((list) => !list.includes(item))) {
+        item.setAttribute('role', 'menuitem');
+      }
       item.addEventListener('blur', this.handleItemBlur, { signal });
       item.addEventListener('focus', this.handleItemFocus, { signal });
       item.addEventListener('pointerenter', this.handleItemPointerEnter, { signal });
@@ -178,13 +190,17 @@ export default class Menu {
       item.addEventListener('click', this.handleRadioItemClick, { signal });
     });
     this.resetTabIndex();
-    if (!this.isSubmenu) this.rootElement.setAttribute('data-menu-initialized', '');
+    if (!this.isSubmenu) {
+      this.rootElement.setAttribute('data-menu-initialized', '');
+    }
     Menu.menus.push(this);
   }
 
   private getActiveElement(): HTMLElement | null {
     let active = document.activeElement;
-    while (active && active.shadowRoot?.activeElement) active = active.shadowRoot.activeElement;
+    while (active && active.shadowRoot?.activeElement) {
+      active = active.shadowRoot.activeElement;
+    }
     return active as HTMLElement | null;
   }
 
@@ -202,23 +218,35 @@ export default class Menu {
   }
 
   private toggle(open: boolean): void {
-    if (open.toString() === this.triggerElement?.getAttribute('aria-expanded')) return;
-    if (this.triggerElement) window.requestAnimationFrame(() => this.triggerElement.setAttribute('aria-expanded', String(open)));
+    if (open.toString() === this.triggerElement?.getAttribute('aria-expanded')) {
+      return;
+    }
+    if (this.triggerElement) {
+      window.requestAnimationFrame(() => this.triggerElement.setAttribute('aria-expanded', String(open)));
+    }
     if (open) {
       Menu.menus.filter((menu) => !menu.rootElement.contains(this.rootElement)).forEach((menu) => menu.close());
       Object.assign(this.listElement.style, {
         display: 'block',
         opacity: '0',
       });
-      if (this.triggerElement) this.updatePopover();
+      if (this.triggerElement) {
+        this.updatePopover();
+      }
       const focusable = this.itemElements.find(this.isFocusable);
-      if (focusable) focusable.focus();
+      if (focusable) {
+        focusable.focus();
+      }
     } else {
       window.clearTimeout(this.submenuTimer);
       this.submenus.forEach((submenu) => submenu.close());
-      if (this.triggerElement && this.rootElement.contains(this.getActiveElement())) this.triggerElement.focus();
+      if (this.triggerElement && this.rootElement.contains(this.getActiveElement())) {
+        this.triggerElement.focus();
+      }
     }
-    if (!this.triggerElement) return;
+    if (!this.triggerElement) {
+      return;
+    }
     const opacity = window.getComputedStyle(this.listElement).getPropertyValue('opacity');
     this.animation?.cancel();
     this.animation = this.listElement.animate(
@@ -234,7 +262,9 @@ export default class Menu {
         this.listElement.removeAttribute('data-menu-placement');
         this.listElement.style.setProperty('display', 'none');
         ['left', 'top', 'transform-origin'].forEach((name) => this.listElement.style.removeProperty(name));
-        if (this.arrowElement) ['left', 'rotate', 'top'].forEach((name) => this.arrowElement!.style.removeProperty(name));
+        if (this.arrowElement) {
+          ['left', 'rotate', 'top'].forEach((name) => this.arrowElement!.style.removeProperty(name));
+        }
       }
       this.listElement.style.removeProperty('opacity');
     });
@@ -271,7 +301,9 @@ export default class Menu {
             }[placement as Placement],
           );
         }
-        if (!this.arrowElement) return;
+        if (!this.arrowElement) {
+          return;
+        }
         const { x: arrowX, y: arrowY } = middlewareData.arrow!;
         const side = placement.split('-')[0] as Side;
         Object.assign(this.arrowElement.style, {
@@ -288,22 +320,30 @@ export default class Menu {
       });
     };
     compute();
-    if (!this.cleanupPopover) this.cleanupPopover = autoUpdate(this.triggerElement, this.listElement, compute);
+    if (!this.cleanupPopover) {
+      this.cleanupPopover = autoUpdate(this.triggerElement, this.listElement, compute);
+    }
   }
 
   private handleOutsidePointerDown(event: PointerEvent): void {
-    if (event.composedPath().includes(this.rootElement) || !this.triggerElement) return;
+    if (event.composedPath().includes(this.rootElement) || !this.triggerElement) {
+      return;
+    }
     this.resetTabIndex();
     this.close();
   }
 
   private handleRootFocusIn(event: FocusEvent): void {
-    if (this.rootElement.contains(event.relatedTarget as HTMLElement) && this.rootElement.contains(this.getActiveElement())) return;
+    if (this.rootElement.contains(event.relatedTarget as HTMLElement) && this.rootElement.contains(this.getActiveElement())) {
+      return;
+    }
     this.resetTabIndex(true);
   }
 
   private handleRootFocusOut(event: FocusEvent): void {
-    if (this.rootElement.contains(event.relatedTarget as HTMLElement)) return;
+    if (this.rootElement.contains(event.relatedTarget as HTMLElement)) {
+      return;
+    }
     this.resetTabIndex();
     this.close();
   }
@@ -312,7 +352,9 @@ export default class Menu {
     event.preventDefault();
     if (!this.isSubmenu) {
       const open = this.triggerElement.getAttribute('aria-expanded') === 'true';
-      if (!this.isSubmenu || (event instanceof PointerEvent && event.pointerType !== 'mouse')) this.toggle(!open);
+      if (!this.isSubmenu || (event instanceof PointerEvent && event.pointerType !== 'mouse')) {
+        this.toggle(!open);
+      }
     } else {
       this.toggle(this.triggerElement === event.currentTarget);
     }
@@ -320,13 +362,17 @@ export default class Menu {
 
   private handleTriggerKeyDown(event: KeyboardEvent): void {
     const { key } = event;
-    if (!['Enter', ' ', ...(!this.isSubmenu ? ['ArrowUp', 'ArrowDown'] : ['ArrowRight'])].includes(key)) return;
+    if (!['Enter', ' ', ...(!this.isSubmenu ? ['ArrowUp', 'ArrowDown'] : ['ArrowRight'])].includes(key)) {
+      return;
+    }
     event.preventDefault();
     event.stopPropagation();
     this.open();
     const focusables = this.itemElements.filter(this.isFocusable);
     const length = focusables.length;
-    if (!length) return;
+    if (!length) {
+      return;
+    }
     let index = 0;
     switch (key) {
       case 'Enter':
@@ -347,11 +393,15 @@ export default class Menu {
 
   private handleListKeyDown(event: KeyboardEvent): void {
     const { shiftKey, key } = event;
-    if (key === 'Tab' && ((!this.triggerElement && shiftKey) || !shiftKey)) return;
+    if (key === 'Tab' && ((!this.triggerElement && shiftKey) || !shiftKey)) {
+      return;
+    }
     if (!['Enter', 'Escape', ' ', 'End', 'Home', ...(this.isSubmenu ? ['ArrowLeft'] : []), 'ArrowUp', 'ArrowDown'].includes(key)) {
       const isCharKey = /^\S$/i.test(key);
       if (!isCharKey || !this.itemElementsByInitial[key.toLowerCase()]?.some(this.isFocusable)) {
-        if (isCharKey) event.stopPropagation();
+        if (isCharKey) {
+          event.stopPropagation();
+        }
         return;
       }
     }
@@ -434,7 +484,9 @@ export default class Menu {
   }
 
   destroy() {
-    if (this.destroyed) return;
+    if (this.destroyed) {
+      return;
+    }
     this.rootElement.removeAttribute('data-menu-initialized');
     this.submenus.forEach((submenu) => {
       submenu.close();
