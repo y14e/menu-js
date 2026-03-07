@@ -49,17 +49,17 @@ export default class Menu {
     this.listElement = this.rootElement.querySelector(this.settings.selector.list);
     this.itemElements = [...this.listElement.querySelectorAll(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} *)`)];
     this.itemElementsByInitial = {};
-    this.itemElements.forEach(item => {
+    this.itemElements.forEach((item) => {
       const initial = item.textContent.trim().charAt(0).toLowerCase();
       if (/\S/.test(initial)) {
         item.setAttribute('aria-keyshortcuts', initial);
         (this.itemElementsByInitial[initial] ||= []).push(item);
       }
     });
-    this.checkboxItemElements = this.itemElements.filter(item => item.getAttribute('role') === 'menuitemcheckbox');
-    this.radioItemElements = this.itemElements.filter(item => item.getAttribute('role') === 'menuitemradio');
+    this.checkboxItemElements = this.itemElements.filter((item) => item.getAttribute('role') === 'menuitemcheckbox');
+    this.radioItemElements = this.itemElements.filter((item) => item.getAttribute('role') === 'menuitemradio');
     this.radioItemElementsByGroup = new Map();
-    this.radioItemElements.forEach(item => {
+    this.radioItemElements.forEach((item) => {
       let group = item.closest(this.settings.selector.group);
       if (!group || !this.rootElement.contains(group)) group = this.rootElement;
       (this.radioItemElementsByGroup.get(group) || this.radioItemElementsByGroup.set(group, []).get(group)).push(item);
@@ -114,20 +114,20 @@ export default class Menu {
     }
     this.listElement.setAttribute('role', 'menu');
     this.listElement.addEventListener('keydown', this.handleListKeyDown, { signal });
-    this.itemElements.forEach(item => {
+    this.itemElements.forEach((item) => {
       const parent = item.parentElement;
       if (parent.querySelector(this.settings.selector.list)) this.submenus.push(new Menu(parent, this.settings, true));
-      if ([this.checkboxItemElements, this.radioItemElements].every(list => !list.includes(item))) item.setAttribute('role', 'menuitem');
+      if ([this.checkboxItemElements, this.radioItemElements].every((list) => !list.includes(item))) item.setAttribute('role', 'menuitem');
       item.addEventListener('blur', this.handleItemBlur, { signal });
       item.addEventListener('focus', this.handleItemFocus, { signal });
       item.addEventListener('pointerenter', this.handleItemPointerEnter, { signal });
       item.addEventListener('pointerleave', this.handleItemPointerLeave, { signal });
     });
-    this.checkboxItemElements.forEach(item => {
+    this.checkboxItemElements.forEach((item) => {
       item.setAttribute('role', 'menuitemcheckbox');
       item.addEventListener('click', this.handleCheckboxItemClick, { signal });
     });
-    this.radioItemElements.forEach(item => {
+    this.radioItemElements.forEach((item) => {
       item.setAttribute('role', 'menuitemradio');
       item.addEventListener('click', this.handleRadioItemClick, { signal });
     });
@@ -148,10 +148,10 @@ export default class Menu {
 
   resetTabIndex(force = false) {
     if (this.triggerElement || force) {
-      this.itemElements.forEach(item => item.setAttribute('tabindex', '-1'));
+      this.itemElements.forEach((item) => item.setAttribute('tabindex', '-1'));
     } else {
-      const first = this.itemElements.find(item => this.isFocusable(item));
-      this.itemElements.forEach(item => item.setAttribute('tabindex', item === first ? '0' : '-1'));
+      const first = this.itemElements.find((item) => this.isFocusable(item));
+      this.itemElements.forEach((item) => item.setAttribute('tabindex', item === first ? '0' : '-1'));
     }
   }
 
@@ -159,7 +159,7 @@ export default class Menu {
     if (open.toString() === this.triggerElement?.getAttribute('aria-expanded')) return;
     if (this.triggerElement) window.requestAnimationFrame(() => this.triggerElement.setAttribute('aria-expanded', String(open)));
     if (open) {
-      Menu.menus.filter(menu => !menu.rootElement.contains(this.rootElement)).forEach(menu => menu.close());
+      Menu.menus.filter((menu) => !menu.rootElement.contains(this.rootElement)).forEach((menu) => menu.close());
       Object.assign(this.listElement.style, {
         display: 'block',
         opacity: '0',
@@ -169,7 +169,7 @@ export default class Menu {
       if (focusable) focusable.focus();
     } else {
       window.clearTimeout(this.submenuTimer);
-      this.submenus.forEach(submenu => submenu.close());
+      this.submenus.forEach((submenu) => submenu.close());
       if (this.triggerElement && this.rootElement.contains(this.getActiveElement())) this.triggerElement.focus();
     }
     if (!this.triggerElement) return;
@@ -187,8 +187,8 @@ export default class Menu {
       if (!open) {
         this.listElement.removeAttribute('data-menu-placement');
         this.listElement.style.setProperty('display', 'none');
-        ['left', 'top', 'transform-origin'].forEach(name => this.listElement.style.removeProperty(name));
-        if (this.arrowElement) ['left', 'rotate', 'top'].forEach(name => this.arrowElement.style.removeProperty(name));
+        ['left', 'top', 'transform-origin'].forEach((name) => this.listElement.style.removeProperty(name));
+        if (this.arrowElement) ['left', 'rotate', 'top'].forEach((name) => this.arrowElement.style.removeProperty(name));
       }
       this.listElement.style.removeProperty('opacity');
     });
@@ -341,7 +341,7 @@ export default class Menu {
         break;
       default:
         targetFocusables = this.itemElementsByInitial[key.toLowerCase()].filter(this.isFocusable);
-        const foundIndex = targetFocusables.findIndex(focusable => focusables.indexOf(focusable) > currentIndex);
+        const foundIndex = targetFocusables.findIndex((focusable) => focusables.indexOf(focusable) > currentIndex);
         newIndex = foundIndex !== -1 ? foundIndex : 0;
     }
     targetFocusables[newIndex].focus();
@@ -359,7 +359,7 @@ export default class Menu {
     window.clearTimeout(this.submenuTimer);
     const item = event.currentTarget;
     this.submenuTimer = window.setTimeout(() => {
-      this.submenus.forEach(submenu => submenu.toggle(submenu.triggerElement === item));
+      this.submenus.forEach((submenu) => submenu.toggle(submenu.triggerElement === item));
       item.setAttribute('tabindex', '0');
       item.focus();
     }, this.settings.delay);
@@ -376,7 +376,7 @@ export default class Menu {
 
   handleRadioItemClick(event) {
     const item = event.currentTarget;
-    this.radioItemElementsByGroup.get(item.closest(this.settings.selector.group) || this.rootElement).forEach(_item => _item.setAttribute('aria-checked', String(_item === item)));
+    this.radioItemElementsByGroup.get(item.closest(this.settings.selector.group) || this.rootElement).forEach((_item) => _item.setAttribute('aria-checked', String(_item === item)));
   }
 
   open() {
@@ -390,7 +390,7 @@ export default class Menu {
   destroy() {
     if (this.destroyed) return;
     this.rootElement.removeAttribute('data-menu-initialized');
-    this.submenus.forEach(submenu => {
+    this.submenus.forEach((submenu) => {
       submenu.close();
       submenu.destroy();
     });
