@@ -89,7 +89,7 @@ export default class Menu {
       },
       selector: { ...this.defaults.selector, ...options?.selector },
     };
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
       this.settings.animation.duration = 0;
     }
     this.isSubmenu = submenu;
@@ -238,7 +238,7 @@ export default class Menu {
         focusable.focus();
       }
     } else {
-      window.clearTimeout(this.submenuTimer);
+      clearTimeout(this.submenuTimer);
       this.submenus.forEach((submenu) => submenu.close());
       if (this.triggerElement && this.rootElement.contains(this.getActiveElement())) {
         this.triggerElement.focus();
@@ -452,9 +452,9 @@ export default class Menu {
   }
 
   private handleItemPointerEnter(event: PointerEvent): void {
-    window.clearTimeout(this.submenuTimer);
+    clearTimeout(this.submenuTimer);
     const item = event.currentTarget as HTMLElement;
-    this.submenuTimer = window.setTimeout(() => {
+    this.submenuTimer = setTimeout(() => {
       this.submenus.forEach((submenu) => submenu.toggle(submenu.triggerElement === item));
       item.setAttribute('tabindex', '0');
       item.focus();
@@ -462,7 +462,7 @@ export default class Menu {
   }
 
   private handleItemPointerLeave(): void {
-    window.clearTimeout(this.submenuTimer);
+    clearTimeout(this.submenuTimer);
   }
 
   private handleCheckboxItemClick(event: MouseEvent): void {
