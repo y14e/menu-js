@@ -247,7 +247,7 @@ export default class Menu {
     if (!this.triggerElement) {
       return;
     }
-    const opacity = window.getComputedStyle(this.listElement).getPropertyValue('opacity');
+    const opacity = getComputedStyle(this.listElement).getPropertyValue('opacity');
     this.animation?.cancel();
     this.animation = this.listElement.animate(
       { opacity: open ? [opacity, '1'] : [opacity, '0'] },
