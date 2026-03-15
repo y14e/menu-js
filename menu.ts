@@ -222,7 +222,7 @@ export default class Menu {
       return;
     }
     if (this.triggerElement) {
-      window.requestAnimationFrame(() => this.triggerElement.setAttribute('aria-expanded', String(open)));
+      requestAnimationFrame(() => this.triggerElement.setAttribute('aria-expanded', String(open)));
     }
     if (open) {
       Menu.menus.filter((menu) => !menu.rootElement.contains(this.rootElement)).forEach((menu) => menu.close());
