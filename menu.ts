@@ -483,18 +483,26 @@ export default class Menu {
     this.toggle(false);
   }
 
-  destroy() {
+  async destroy() {
     if (this.destroyed) {
       return;
     }
-    this.rootElement.removeAttribute('data-menu-initialized');
-    this.submenus.forEach((submenu) => {
-      submenu.close();
-      submenu.destroy();
-    });
-    this.submenus = [];
-    this.close();
-    this.eventController.abort();
     this.destroyed = true;
+    this.rootElement.removeAttribute('data-menu-initialized');
+    this.cleanupPopover?.();
+    this.cleanupPopover = null;
+    await Promise.all(this.submenus.map((submenu) => submenu.destroy()));
+    this.submenus = [];
+    clearTimeout(this.submenuTimer);
+    this.close();
+    const animation = this.animation;
+    if (animation) {
+      try {
+        await animation.finished;
+      } catch {}
+      animation.cancel();
+    }
+    this.eventController.abort();
+    Menu.menus = Menu.menus.filter((menu) => menu !== this);
   }
 }
