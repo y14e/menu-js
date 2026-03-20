@@ -1,5 +1,5 @@
 # menu.js
-WAI-ARIA compliant menu (menu button) pattern implementation in JS. Supports checkbox item, radio item and infinitely nested menus.
+WAI-ARIA compliant menu ([menu button](https://www.w3.org/WAI/ARIA/apg/patterns/menu-button/)) pattern implementation in JS. Supports checkbox item, radio item and infinitely nested menus.
 ## Installation
 ```js
 import Menu from './menu.js';
