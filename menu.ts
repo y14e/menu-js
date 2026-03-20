@@ -483,7 +483,7 @@ export default class Menu {
     this.toggle(false);
   }
 
-  async destroy() {
+  async destroy(): Promise<void> {
     if (this.destroyed) {
       return;
     }
