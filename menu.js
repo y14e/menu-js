@@ -448,7 +448,6 @@ export default class Menu {
     this.cleanupPopover?.();
     this.cleanupPopover = null;
     await Promise.all(this.submenus.map((submenu) => submenu.destroy()));
-    this.submenus = [];
     clearTimeout(this.submenuTimer);
     this.close();
     const animation = this.animation;
