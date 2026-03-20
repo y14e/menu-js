@@ -79,10 +79,10 @@ export default class Menu {
     } else {
       this.arrowElement = null;
     }
-    this.animation = null;
     this.submenus = [];
     this.submenuTimer = 0;
-    this.eventController = new AbortController();
+    this.animation = null;
+    this.controller = new AbortController();
     this.destroyed = false;
     this.cleanupPopover = null;
     this.handleOutsidePointerDown = this.handleOutsidePointerDown.bind(this);
@@ -104,7 +104,7 @@ export default class Menu {
     if (!this.listElement || !this.itemElements.length) {
       return;
     }
-    const { signal } = this.eventController;
+    const { signal } = this.controller;
     document.addEventListener('pointerdown', this.handleOutsidePointerDown, { signal });
     this.rootElement.addEventListener('focusin', this.handleRootFocusIn, { signal });
     this.rootElement.addEventListener('focusout', this.handleRootFocusOut, { signal });
@@ -445,11 +445,13 @@ export default class Menu {
     }
     this.destroyed = true;
     this.rootElement.removeAttribute('data-menu-initialized');
+    this.controller.abort();
     this.cleanupPopover?.();
     this.cleanupPopover = null;
     await Promise.all(this.submenus.map((submenu) => submenu.destroy()));
     clearTimeout(this.submenuTimer);
     this.close();
+    Menu.menus = Menu.menus.filter((menu) => menu !== this);
     const animation = this.animation;
     if (animation) {
       try {
@@ -457,7 +459,5 @@ export default class Menu {
       } catch {}
       animation.cancel();
     }
-    this.eventController.abort();
-    Menu.menus = Menu.menus.filter((menu) => menu !== this);
   }
 }
