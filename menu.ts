@@ -233,18 +233,13 @@ export default class Menu {
       if (this.triggerElement) {
         this.updatePopover();
       }
-      const focusable = this.itemElements.find(this.isFocusable);
-      if (focusable) {
-        focusable.focus();
-      }
+      this.itemElements.find(this.isFocusable)?.focus();
     } else {
       clearTimeout(this.submenuTimer);
       this.submenus.forEach((submenu) => submenu.close());
       if (this.triggerElement && this.rootElement.contains(this.getActiveElement())) {
         this.triggerElement.focus();
       }
-      this.cleanupPopover?.();
-      this.cleanupPopover = null;
     }
     if (!this.triggerElement) {
       return;
@@ -270,6 +265,10 @@ export default class Menu {
       }
       this.listElement.style.removeProperty('opacity');
     });
+    if (!open) {
+      this.cleanupPopover?.();
+      this.cleanupPopover = null;
+    }
   }
 
   private updatePopover(): void {
@@ -493,8 +492,8 @@ export default class Menu {
     clearTimeout(this.submenuTimer);
     this.cleanupPopover?.();
     this.cleanupPopover = null;
-    await Promise.all(this.submenus.map((submenu) => submenu.destroy()));
     Menu.menus = Menu.menus.filter((menu) => menu !== this);
+    await Promise.all(this.submenus.map((submenu) => submenu.destroy()));
     const animation = this.animation;
     if (animation) {
       if (!force) {
