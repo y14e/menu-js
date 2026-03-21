@@ -199,6 +199,8 @@ export default class Menu {
       if (this.triggerElement && this.rootElement.contains(this.getActiveElement())) {
         this.triggerElement.focus();
       }
+      this.cleanupPopover?.();
+      this.cleanupPopover = null;
     }
     if (!this.triggerElement) {
       return;
@@ -224,10 +226,6 @@ export default class Menu {
       }
       this.listElement.style.removeProperty('opacity');
     });
-    if (!open && this.cleanupPopover) {
-      this.cleanupPopover();
-      this.cleanupPopover = null;
-    }
   }
 
   updatePopover() {
@@ -448,8 +446,10 @@ export default class Menu {
     this.destroyed = true;
     this.rootElement.removeAttribute('data-menu-initialized');
     this.controller.abort();
+    clearTimeout(this.submenuTimer);
+    this.cleanupPopover?.();
+    this.cleanupPopover = null;
     await Promise.all(this.submenus.map((submenu) => submenu.destroy()));
-    this.close();
     Menu.menus = Menu.menus.filter((menu) => menu !== this);
     const animation = this.animation;
     if (animation) {
