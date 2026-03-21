@@ -454,11 +454,13 @@ export default class Menu {
   private handleItemPointerEnter(event: PointerEvent): void {
     clearTimeout(this.submenuTimer);
     const item = event.currentTarget as HTMLElement;
-    this.submenuTimer = setTimeout(() => {
-      this.submenus.forEach((submenu) => submenu.toggle(submenu.triggerElement === item));
-      item.setAttribute('tabindex', '0');
-      item.focus();
-    }, this.settings.delay);
+    this.submenuTimer = Number(
+      setTimeout(() => {
+        this.submenus.forEach((submenu) => submenu.toggle(submenu.triggerElement === item));
+        item.setAttribute('tabindex', '0');
+        item.focus();
+      }, this.settings.delay),
+    );
   }
 
   private handleItemPointerLeave(): void {
@@ -483,7 +485,7 @@ export default class Menu {
     this.toggle(false);
   }
 
-  async destroy(): Promise<void> {
+  async destroy(force = false): Promise<void> {
     if (this.destroyed) {
       return;
     }
@@ -498,9 +500,11 @@ export default class Menu {
     Menu.menus = Menu.menus.filter((menu) => menu !== this);
     const animation = this.animation;
     if (animation) {
-      try {
-        await animation.finished;
-      } catch {}
+      if (!force) {
+        try {
+          await animation.finished;
+        } catch {}
+      }
       animation.cancel();
     }
   }
