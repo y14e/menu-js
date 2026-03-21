@@ -448,10 +448,7 @@ export default class Menu {
     this.destroyed = true;
     this.rootElement.removeAttribute('data-menu-initialized');
     this.controller.abort();
-    this.cleanupPopover?.();
-    this.cleanupPopover = null;
     await Promise.all(this.submenus.map((submenu) => submenu.destroy()));
-    clearTimeout(this.submenuTimer);
     this.close();
     Menu.menus = Menu.menus.filter((menu) => menu !== this);
     const animation = this.animation;
