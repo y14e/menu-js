@@ -427,7 +427,7 @@ export default class Menu {
 
   handleRadioItemClick(event) {
     const item = event.currentTarget;
-    this.radioItemElementsByGroup.get(item.closest(this.settings.selector.group) || this.rootElement).forEach((_item) => _item.setAttribute('aria-checked', String(_item === item)));
+    this.radioItemElementsByGroup.get(item.closest(this.settings.selector.group) || this.rootElement).forEach((i) => i.setAttribute('aria-checked', String(i === item)));
   }
 
   open() {
