@@ -52,12 +52,12 @@ export default class Menu {
     this.triggerElement = this.rootElement.querySelector(this.settings.selector[!this.isSubmenu ? 'trigger' : 'item']);
     this.listElement = this.rootElement.querySelector(this.settings.selector.list);
     this.itemElements = [...this.listElement.querySelectorAll(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} *)`)];
-    this.itemElementsByInitial = {};
+    this.itemElementsByFirstChar = {};
     this.itemElements.forEach((item) => {
-      const initial = item.textContent.trim().charAt(0).toLowerCase();
-      if (/\S/.test(initial)) {
-        item.setAttribute('aria-keyshortcuts', initial);
-        (this.itemElementsByInitial[initial] ||= []).push(item);
+      const char = item.textContent.trim().charAt(0).toLowerCase();
+      if (/\S/.test(char)) {
+        item.setAttribute('aria-keyshortcuts', char);
+        (this.itemElementsByFirstChar[char] ||= []).push(item);
       }
     });
     this.checkboxItemElements = this.itemElements.filter((item) => item.getAttribute('role') === 'menuitemcheckbox');
@@ -351,7 +351,7 @@ export default class Menu {
     }
     if (!['Enter', 'Escape', ' ', 'End', 'Home', ...(this.isSubmenu ? ['ArrowLeft'] : []), 'ArrowUp', 'ArrowDown'].includes(key)) {
       const isCharKey = /^\S$/i.test(key);
-      if (!isCharKey || !this.itemElementsByInitial[key.toLowerCase()]?.some(this.isFocusable)) {
+      if (!isCharKey || !this.itemElementsByFirstChar[key.toLowerCase()]?.some(this.isFocusable)) {
         if (isCharKey) {
           event.stopPropagation();
         }
@@ -389,7 +389,7 @@ export default class Menu {
         newIndex = (currentIndex + 1) % length;
         break;
       default:
-        targetFocusables = this.itemElementsByInitial[key.toLowerCase()].filter(this.isFocusable);
+        targetFocusables = this.itemElementsByFirstChar[key.toLowerCase()].filter(this.isFocusable);
         const foundIndex = targetFocusables.findIndex((focusable) => focusables.indexOf(focusable) > currentIndex);
         newIndex = foundIndex !== -1 ? foundIndex : 0;
     }
