@@ -3,7 +3,7 @@ import { arrow, autoUpdate, computePosition, flip, offset, shift } from 'https:/
 export default class Menu {
   static menus = [];
 
-  constructor(root, options, submenu = false) {
+  constructor(root, options = {}, submenu = false) {
     if (!root) {
       return;
     }
@@ -36,14 +36,14 @@ export default class Menu {
     this.settings = {
       ...this.defaults,
       ...options,
-      animation: { ...this.defaults.animation, ...options?.animation },
+      animation: { ...this.defaults.animation, ...options.animation },
       popover: {
         ...this.defaults.popover,
-        ...options?.popover,
-        menu: { ...this.defaults.popover.menu, ...options?.popover?.menu },
-        submenu: { ...this.defaults.popover.submenu, ...options?.popover?.submenu },
+        ...options.popover,
+        menu: { ...this.defaults.popover.menu, ...options.popover?.menu },
+        submenu: { ...this.defaults.popover.submenu, ...options.popover?.submenu },
       },
-      selector: { ...this.defaults.selector, ...options?.selector },
+      selector: { ...this.defaults.selector, ...options.selector },
     };
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
       this.settings.animation.duration = 0;
