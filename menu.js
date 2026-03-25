@@ -120,7 +120,7 @@ export default class Menu {
       }
       this.triggerElement.addEventListener('click', this.handleTriggerClick, { signal });
       this.triggerElement.addEventListener('keydown', this.handleTriggerKeyDown, { signal });
-      this.listElement.setAttribute('aria-labelledby', `${this.listElement.getAttribute('aria-labelledby') || ''} ${this.triggerElement.id}`.trim());
+      this.listElement.setAttribute('aria-labelledby', `${this.listElement.getAttribute('aria-labelledby') ?? ''} ${this.triggerElement.id}`.trim());
     }
     this.listElement.setAttribute('role', 'menu');
     this.listElement.addEventListener('keydown', this.handleListKeyDown, { signal });
