@@ -54,10 +54,11 @@ export default class Menu {
     this.itemElements = [...this.listElement.querySelectorAll(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} *)`)];
     this.itemElementsByFirstChar = {};
     this.itemElements.forEach((item) => {
-      const char = item.textContent.trim().charAt(0).toLowerCase();
-      if (/\S/.test(char)) {
-        item.setAttribute('aria-keyshortcuts', char);
-        (this.itemElementsByFirstChar[char] ||= []).push(item);
+      const shortcuts = item.getAttribute('aria-keyshortcuts');
+      const keys = (shortcuts?.split(/\s+/) ?? [item.textContent.trim()[0]]).filter((key) => /^\S$/i.test(key)).map((key) => key.toLowerCase());
+      keys.forEach((key) => (this.itemElementsByFirstChar[key] ||= []).push(item));
+      if (!shortcuts && keys[0]) {
+        item.setAttribute('aria-keyshortcuts', keys[0]);
       }
     });
     this.checkboxItemElements = this.itemElements.filter((item) => item.getAttribute('role') === 'menuitemcheckbox');
