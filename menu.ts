@@ -227,10 +227,8 @@ export default class Menu {
     }
     if (open) {
       Menu.menus.filter((menu) => !menu.rootElement.contains(this.rootElement)).forEach((menu) => menu.close());
-      Object.assign(this.listElement.style, {
-        display: 'block',
-        opacity: '0',
-      });
+      this.listElement.style.setProperty('display', 'block');
+      this.listElement.style.setProperty('opacity', '0');
       if (this.triggerElement) {
         this.updatePopover();
       }
@@ -275,10 +273,8 @@ export default class Menu {
   private updatePopover(): void {
     const compute = () => {
       computePosition(this.triggerElement, this.listElement, this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu']).then(({ x: listX, y: listY, placement, middlewareData }: { x: number; y: number; placement: Placement; middlewareData: MiddlewareData }) => {
-        Object.assign(this.listElement.style, {
-          left: `${listX}px`,
-          top: `${listY}px`,
-        });
+        this.listElement.style.setProperty('left', `${listX}px`);
+        this.listElement.style.setProperty('top', `${listY}px`);
         this.listElement.setAttribute('data-menu-placement', placement);
         if (this.settings.popover.transformOrigin) {
           this.listElement.style.setProperty(
@@ -303,18 +299,19 @@ export default class Menu {
           return;
         }
         const { x: arrowX, y: arrowY } = middlewareData.arrow!;
+        this.arrowElement.style.setProperty('left', arrowX != null ? `${arrowX}px` : '');
+        this.arrowElement.style.setProperty('top', arrowY != null ? `${arrowY - this.arrowElement.offsetHeight / 2}px` : '');
         const side = placement.split('-')[0] as Side;
-        Object.assign(this.arrowElement.style, {
-          left: arrowX ? `${arrowX}px` : '',
-          rotate: `${side === 'top' ? 225 : side === 'right' ? 315 : side === 'bottom' ? 45 : 135}deg`,
-          top: arrowY ? `${arrowY - this.arrowElement.offsetHeight / 2}px` : '',
-          [{
+        this.arrowElement.style.setProperty('rotate', `${side === 'top' ? 225 : side === 'right' ? 315 : side === 'bottom' ? 45 : 135}deg`);
+        this.arrowElement.style.setProperty(
+          {
             top: 'bottom',
             right: 'left',
             bottom: 'top',
             left: 'right',
-          }[side]]: `${this.arrowElement.offsetWidth / -2}px`,
-        });
+          }[side],
+          `${this.arrowElement.offsetWidth / -2}px`,
+        );
       });
     };
     compute();
@@ -495,14 +492,13 @@ export default class Menu {
     this.cleanupPopover = null;
     Menu.menus = Menu.menus.filter((menu) => menu !== this);
     await Promise.all(this.submenus.map((submenu) => submenu.destroy()));
-    const animation = this.animation;
-    if (animation) {
+    if (this.animation) {
       if (!force) {
         try {
-          await animation.finished;
+          await this.animation.finished;
         } catch {}
       }
-      animation.cancel();
+      this.animation.cancel();
     }
   }
 }
