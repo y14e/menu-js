@@ -243,6 +243,10 @@ export default class Menu {
     if (!this.triggerElement) {
       return;
     }
+    if (!open) {
+      this.cleanupPopover?.();
+      this.cleanupPopover = null;
+    }
     const opacity = getComputedStyle(this.listElement).getPropertyValue('opacity');
     this.animation?.cancel();
     this.animation = this.listElement.animate(
@@ -264,10 +268,6 @@ export default class Menu {
       }
       this.listElement.style.removeProperty('opacity');
     });
-    if (!open) {
-      this.cleanupPopover?.();
-      this.cleanupPopover = null;
-    }
   }
 
   private updatePopover(): void {
