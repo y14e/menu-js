@@ -175,7 +175,7 @@ export default class Menu {
   }
 
   toggle(open) {
-    if (open.toString() === this.triggerElement?.getAttribute('aria-expanded')) {
+    if (String(open) === this.triggerElement?.getAttribute('aria-expanded')) {
       return;
     }
     if (this.triggerElement) {
