@@ -54,7 +54,9 @@ export default class Menu {
     this.itemElements.forEach((item) => {
       const shortcuts = item.getAttribute('aria-keyshortcuts');
       const keys = (shortcuts?.split(/\s+/) ?? [item.textContent.trim()[0]]).filter((key) => /^\S$/i.test(key)).map((key) => key.toLowerCase());
-      keys.forEach((key) => (this.itemElementsByFirstChar[key] ||= []).push(item));
+      keys.forEach((key) => {
+        (this.itemElementsByFirstChar[key] ||= []).push(item);
+      });
       if (!shortcuts && keys[0]) {
         item.setAttribute('aria-keyshortcuts', keys[0]);
       }
@@ -111,8 +113,8 @@ export default class Menu {
       this.triggerElement.setAttribute('aria-expanded', 'false');
       this.triggerElement.setAttribute('aria-haspopup', 'true');
       this.triggerElement.id ||= `menu-trigger-${id}`;
-      this.triggerElement.setAttribute('tabindex', this.isFocusable(this.triggerElement) && !this.isSubmenu ? '0' : '-1');
-      if (!this.isFocusable(this.triggerElement)) {
+      this.triggerElement.setAttribute('tabindex', Menu.isFocusable(this.triggerElement) && !this.isSubmenu ? '0' : '-1');
+      if (!Menu.isFocusable(this.triggerElement)) {
         this.triggerElement.style.setProperty('pointer-events', 'none');
       }
       this.triggerElement.addEventListener('click', this.handleTriggerClick, { signal });
@@ -149,7 +151,7 @@ export default class Menu {
     Menu.menus.push(this);
   }
 
-  getActiveElement() {
+  static getActiveElement() {
     let active = document.activeElement;
     while (active && active.shadowRoot?.activeElement) {
       active = active.shadowRoot.activeElement;
@@ -157,7 +159,7 @@ export default class Menu {
     return active;
   }
 
-  isFocusable(element) {
+  static isFocusable(element) {
     return element.getAttribute('aria-disabled') !== 'true' && !element.hasAttribute('disabled');
   }
 
@@ -165,7 +167,7 @@ export default class Menu {
     if (this.triggerElement || force) {
       this.itemElements.forEach((item) => item.setAttribute('tabindex', '-1'));
     } else {
-      const first = this.itemElements.find((item) => this.isFocusable(item));
+      const first = this.itemElements.find((item) => Menu.isFocusable(item));
       this.itemElements.forEach((item) => item.setAttribute('tabindex', item === first ? '0' : '-1'));
     }
   }
@@ -182,11 +184,11 @@ export default class Menu {
       if (this.triggerElement) {
         this.updatePopover();
       }
-      this.itemElements.find(this.isFocusable)?.focus();
+      this.itemElements.find(Menu.isFocusable)?.focus();
     } else {
       clearTimeout(this.submenuTimer);
       this.submenus.forEach((submenu) => submenu.close());
-      if (this.triggerElement && this.rootElement.contains(this.getActiveElement())) {
+      if (this.triggerElement && this.rootElement.contains(Menu.getActiveElement())) {
         this.triggerElement.focus();
       }
     }
@@ -273,7 +275,7 @@ export default class Menu {
   }
 
   handleRootFocusIn(event) {
-    if (this.rootElement.contains(event.relatedTarget) && this.rootElement.contains(this.getActiveElement())) return;
+    if (this.rootElement.contains(event.relatedTarget) && this.rootElement.contains(Menu.getActiveElement())) return;
     this.resetTabIndex(true);
   }
 
@@ -301,7 +303,7 @@ export default class Menu {
     event.preventDefault();
     event.stopPropagation();
     this.open();
-    const focusables = this.itemElements.filter(this.isFocusable);
+    const focusables = this.itemElements.filter(Menu.isFocusable);
     const length = focusables.length;
     if (!length) return;
     let index = 0;
@@ -327,7 +329,7 @@ export default class Menu {
     if (key === 'Tab' && ((!this.triggerElement && shiftKey) || !shiftKey)) return;
     if (!['Enter', 'Escape', ' ', 'End', 'Home', ...(this.isSubmenu ? ['ArrowLeft'] : []), 'ArrowUp', 'ArrowDown'].includes(key)) {
       const isCharKey = /^\S$/i.test(key);
-      if (!isCharKey || !this.itemElementsByFirstChar[key.toLowerCase()]?.some(this.isFocusable)) {
+      if (!isCharKey || !this.itemElementsByFirstChar[key.toLowerCase()]?.some(Menu.isFocusable)) {
         if (isCharKey) {
           event.stopPropagation();
         }
@@ -336,9 +338,9 @@ export default class Menu {
     }
     event.preventDefault();
     event.stopPropagation();
-    const focusables = this.itemElements.filter(this.isFocusable);
+    const focusables = this.itemElements.filter(Menu.isFocusable);
     const length = focusables.length;
-    const active = this.getActiveElement();
+    const active = Menu.getActiveElement();
     const currentIndex = focusables.indexOf(active);
     let newIndex = currentIndex;
     let targetFocusables = focusables;
@@ -365,7 +367,7 @@ export default class Menu {
         newIndex = (currentIndex + 1) % length;
         break;
       default:
-        targetFocusables = this.itemElementsByFirstChar[key.toLowerCase()].filter(this.isFocusable);
+        targetFocusables = this.itemElementsByFirstChar[key.toLowerCase()].filter(Menu.isFocusable);
         const foundIndex = targetFocusables.findIndex((focusable) => focusables.indexOf(focusable) > currentIndex);
         newIndex = foundIndex !== -1 ? foundIndex : 0;
     }
