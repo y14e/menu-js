@@ -4,9 +4,7 @@ export default class Menu {
   static menus = [];
 
   constructor(root, options = {}, submenu = false) {
-    if (!root) {
-      return;
-    }
+    if (!root) return;
     this.rootElement = root;
     this.defaults = {
       animation: { duration: 300 },
@@ -102,9 +100,7 @@ export default class Menu {
   }
 
   initialize() {
-    if (!this.listElement || !this.itemElements.length) {
-      return;
-    }
+    if (!this.listElement || !this.itemElements.length) return;
     const { signal } = this.controller;
     document.addEventListener('pointerdown', this.handleOutsidePointerDown, { signal });
     this.rootElement.addEventListener('focusin', this.handleRootFocusIn, { signal });
@@ -175,9 +171,7 @@ export default class Menu {
   }
 
   toggle(open) {
-    if (String(open) === this.triggerElement?.getAttribute('aria-expanded')) {
-      return;
-    }
+    if (String(open) === this.triggerElement?.getAttribute('aria-expanded')) return;
     if (this.triggerElement) {
       requestAnimationFrame(() => this.triggerElement.setAttribute('aria-expanded', String(open)));
     }
@@ -196,9 +190,7 @@ export default class Menu {
         this.triggerElement.focus();
       }
     }
-    if (!this.triggerElement) {
-      return;
-    }
+    if (!this.triggerElement) return;
     if (!open) {
       this.cleanupPopover?.();
       this.cleanupPopover = null;
@@ -251,9 +243,7 @@ export default class Menu {
             }[placement],
           );
         }
-        if (!this.arrowElement) {
-          return;
-        }
+        if (!this.arrowElement) return;
         const { x: arrowX, y: arrowY } = middlewareData.arrow;
         this.arrowElement.style.setProperty('left', arrowX != null ? `${arrowX}px` : '');
         this.arrowElement.style.setProperty('top', arrowY != null ? `${arrowY - this.arrowElement.offsetHeight / 2}px` : '');
@@ -277,24 +267,18 @@ export default class Menu {
   }
 
   handleOutsidePointerDown(event) {
-    if (event.composedPath().includes(this.rootElement) || !this.triggerElement) {
-      return;
-    }
+    if (event.composedPath().includes(this.rootElement) || !this.triggerElement) return;
     this.resetTabIndex();
     this.close();
   }
 
   handleRootFocusIn(event) {
-    if (this.rootElement.contains(event.relatedTarget) && this.rootElement.contains(this.getActiveElement())) {
-      return;
-    }
+    if (this.rootElement.contains(event.relatedTarget) && this.rootElement.contains(this.getActiveElement())) return;
     this.resetTabIndex(true);
   }
 
   handleRootFocusOut(event) {
-    if (this.rootElement.contains(event.relatedTarget)) {
-      return;
-    }
+    if (this.rootElement.contains(event.relatedTarget)) return;
     this.resetTabIndex();
     this.close();
   }
@@ -313,17 +297,13 @@ export default class Menu {
 
   handleTriggerKeyDown(event) {
     const { key } = event;
-    if (!['Enter', ' ', ...(!this.isSubmenu ? ['ArrowUp', 'ArrowDown'] : ['ArrowRight'])].includes(key)) {
-      return;
-    }
+    if (!['Enter', ' ', ...(!this.isSubmenu ? ['ArrowUp', 'ArrowDown'] : ['ArrowRight'])].includes(key)) return;
     event.preventDefault();
     event.stopPropagation();
     this.open();
     const focusables = this.itemElements.filter(this.isFocusable);
     const length = focusables.length;
-    if (!length) {
-      return;
-    }
+    if (!length) return;
     let index = 0;
     switch (key) {
       case 'Enter':
@@ -344,9 +324,7 @@ export default class Menu {
 
   handleListKeyDown(event) {
     const { shiftKey, key } = event;
-    if (key === 'Tab' && ((!this.triggerElement && shiftKey) || !shiftKey)) {
-      return;
-    }
+    if (key === 'Tab' && ((!this.triggerElement && shiftKey) || !shiftKey)) return;
     if (!['Enter', 'Escape', ' ', 'End', 'Home', ...(this.isSubmenu ? ['ArrowLeft'] : []), 'ArrowUp', 'ArrowDown'].includes(key)) {
       const isCharKey = /^\S$/i.test(key);
       if (!isCharKey || !this.itemElementsByFirstChar[key.toLowerCase()]?.some(this.isFocusable)) {
@@ -437,9 +415,7 @@ export default class Menu {
   }
 
   async destroy(force = false) {
-    if (this.destroyed) {
-      return;
-    }
+    if (this.destroyed) return;
     this.destroyed = true;
     this.rootElement.removeAttribute('data-menu-initialized');
     this.controller.abort();
