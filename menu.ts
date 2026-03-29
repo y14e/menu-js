@@ -92,8 +92,8 @@ export default class Menu {
       this.settings.animation.duration = 0;
     }
     this.isSubmenu = submenu;
-    this.triggerElement = this.rootElement.querySelector<HTMLElement>(this.settings.selector[!this.isSubmenu ? 'trigger' : 'item']) as HTMLElement;
-    this.listElement = this.rootElement.querySelector<HTMLElement>(this.settings.selector.list) as HTMLElement;
+    this.triggerElement = this.rootElement.querySelector(this.settings.selector[!this.isSubmenu ? 'trigger' : 'item']) as HTMLElement;
+    this.listElement = this.rootElement.querySelector(this.settings.selector.list) as HTMLElement;
     this.itemElements = [...this.listElement.querySelectorAll<HTMLElement>(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} *)`)];
     this.itemElementsByFirstChar = {};
     this.itemElements.forEach((item) => {
