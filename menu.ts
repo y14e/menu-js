@@ -46,7 +46,7 @@ export default class Menu {
   private animation!: Animation | null;
   private controller!: AbortController;
   private destroyed!: boolean;
-  private cleanupPopover!: (() => void) | null;
+  private cleanupPopover!: (() =>) | null;
 
   constructor(root: HTMLElement, options: Partial<MenuOptions> = {}, submenu = false) {
     if (!root) return;
@@ -213,10 +213,10 @@ export default class Menu {
 
   private resetTabIndex(force = false): void {
     if (this.triggerElement || force) {
-      this.itemElements.forEach((item) => void item.setAttribute('tabindex', '-1'));
+      this.itemElements.forEach((item) => item.setAttribute('tabindex', '-1'));
     } else {
       const first = this.itemElements.find((item) => this.isFocusable(item));
-      this.itemElements.forEach((item) => void item.setAttribute('tabindex', item === first ? '0' : '-1'));
+      this.itemElements.forEach((item) => item.setAttribute('tabindex', item === first ? '0' : '-1'));
     }
   }
 
@@ -226,7 +226,7 @@ export default class Menu {
       requestAnimationFrame(() => this.triggerElement.setAttribute('aria-expanded', String(open)));
     }
     if (open) {
-      Menu.menus.filter((menu) => !menu.rootElement.contains(this.rootElement)).forEach((menu) => void menu.close());
+      Menu.menus.filter((menu) => !menu.rootElement.contains(this.rootElement)).forEach((menu) => menu.close());
       this.listElement.style.setProperty('display', 'block');
       this.listElement.style.setProperty('opacity', '0');
       if (this.triggerElement) {
@@ -235,7 +235,7 @@ export default class Menu {
       this.itemElements.find(this.isFocusable)?.focus();
     } else {
       clearTimeout(this.submenuTimer);
-      this.submenus.forEach((submenu) => void submenu.close());
+      this.submenus.forEach((submenu) => submenu.close());
       if (this.triggerElement && this.rootElement.contains(this.getActiveElement())) {
         this.triggerElement.focus();
       }
@@ -259,9 +259,9 @@ export default class Menu {
       if (!open) {
         this.listElement.removeAttribute('data-menu-placement');
         this.listElement.style.setProperty('display', 'none');
-        ['left', 'top', 'transform-origin'].forEach((name) => void this.listElement.style.removeProperty(name));
+        ['left', 'top', 'transform-origin'].forEach((name) => this.listElement.style.removeProperty(name));
         if (this.arrowElement) {
-          ['left', 'rotate', 'top'].forEach((name) => void (this.arrowElement as HTMLElement).style.removeProperty(name));
+          ['left', 'rotate', 'top'].forEach((name) => (this.arrowElement as HTMLElement).style.removeProperty(name));
         }
       }
       this.listElement.style.removeProperty('opacity');
@@ -438,7 +438,7 @@ export default class Menu {
     const item = event.currentTarget as HTMLElement;
     this.submenuTimer = Number(
       setTimeout(() => {
-        this.submenus.forEach((submenu) => void submenu.toggle(submenu.triggerElement === item));
+        this.submenus.forEach((submenu) => submenu.toggle(submenu.triggerElement === item));
         item.setAttribute('tabindex', '0');
         item.focus();
       }, this.settings.delay),
@@ -456,7 +456,7 @@ export default class Menu {
 
   private handleRadioItemClick(event: MouseEvent): void {
     const item = event.currentTarget as HTMLElement;
-    (this.radioItemElementsByGroup.get(item.closest(this.settings.selector.group) || this.rootElement) as HTMLElement[]).forEach((i) => void i.setAttribute('aria-checked', String(i === item)));
+    (this.radioItemElementsByGroup.get(item.closest(this.settings.selector.group) || this.rootElement) as HTMLElement[]).forEach((i) => i.setAttribute('aria-checked', String(i === item)));
   }
 
   open(): void {
