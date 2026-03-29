@@ -92,11 +92,11 @@ export default class Menu {
     this.handleTriggerClick = this.handleTriggerClick.bind(this);
     this.handleTriggerKeyDown = this.handleTriggerKeyDown.bind(this);
     this.handleListKeyDown = this.handleListKeyDown.bind(this);
-    this.handleItemBlur = this.handleItemBlur.bind(this);
-    this.handleItemFocus = this.handleItemFocus.bind(this);
+    Menu.handleItemBlur = Menu.handleItemBlur.bind(this);
+    Menu.handleItemFocus = Menu.handleItemFocus.bind(this);
     this.handleItemPointerEnter = this.handleItemPointerEnter.bind(this);
     this.handleItemPointerLeave = this.handleItemPointerLeave.bind(this);
-    this.handleCheckboxItemClick = this.handleCheckboxItemClick.bind(this);
+    Menu.handleCheckboxItemClick = Menu.handleCheckboxItemClick.bind(this);
     this.handleRadioItemClick = this.handleRadioItemClick.bind(this);
     this.initialize();
   }
@@ -138,7 +138,7 @@ export default class Menu {
     });
     this.checkboxItemElements.forEach((item) => {
       item.setAttribute('role', 'menuitemcheckbox');
-      item.addEventListener('click', this.handleCheckboxItemClick, { signal });
+      item.addEventListener('click', Menu.handleCheckboxItemClick, { signal });
     });
     this.radioItemElements.forEach((item) => {
       item.setAttribute('role', 'menuitemradio');
@@ -304,7 +304,7 @@ export default class Menu {
     event.stopPropagation();
     this.open();
     const focusables = this.itemElements.filter(Menu.isFocusable);
-    const length = focusables.length;
+    const { length } = focusables;
     if (!length) return;
     let index = 0;
     switch (key) {
@@ -319,6 +319,8 @@ export default class Menu {
         return;
       case 'ArrowDown':
         index = 0;
+        break;
+      default:
         break;
     }
     focusables[index].focus();
@@ -339,7 +341,7 @@ export default class Menu {
     event.preventDefault();
     event.stopPropagation();
     const focusables = this.itemElements.filter(Menu.isFocusable);
-    const length = focusables.length;
+    const { length } = focusables;
     const active = Menu.getActiveElement();
     const currentIndex = focusables.indexOf(active);
     let newIndex = currentIndex;
@@ -366,19 +368,20 @@ export default class Menu {
       case 'ArrowDown':
         newIndex = (currentIndex + 1) % length;
         break;
-      default:
+      default: {
         targetFocusables = this.itemElementsByFirstChar[key.toLowerCase()].filter(Menu.isFocusable);
         const foundIndex = targetFocusables.findIndex((focusable) => focusables.indexOf(focusable) > currentIndex);
         newIndex = foundIndex !== -1 ? foundIndex : 0;
+      }
     }
     targetFocusables[newIndex].focus();
   }
 
-  handleItemBlur(event) {
+  static handleItemBlur(event) {
     event.currentTarget.setAttribute('tabindex', '-1');
   }
 
-  handleItemFocus(event) {
+  static handleItemFocus(event) {
     event.currentTarget.setAttribute('tabindex', '0');
   }
 
@@ -398,7 +401,7 @@ export default class Menu {
     clearTimeout(this.submenuTimer);
   }
 
-  handleCheckboxItemClick(event) {
+  static handleCheckboxItemClick(event) {
     const item = event.currentTarget;
     item.setAttribute('aria-checked', String(item.getAttribute('aria-checked') === 'false'));
   }

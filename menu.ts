@@ -45,7 +45,7 @@ export default class Menu {
   private animation!: Animation | null;
   private controller!: AbortController;
   private destroyed!: boolean;
-  private cleanupPopover!: Function | null;
+  private cleanupPopover!: (() => void) | null;
 
   constructor(root: HTMLElement, options: Partial<MenuOptions> = {}, submenu = false) {
     if (!root) return;
@@ -136,11 +136,11 @@ export default class Menu {
     this.handleTriggerClick = this.handleTriggerClick.bind(this);
     this.handleTriggerKeyDown = this.handleTriggerKeyDown.bind(this);
     this.handleListKeyDown = this.handleListKeyDown.bind(this);
-    this.handleItemBlur = this.handleItemBlur.bind(this);
-    this.handleItemFocus = this.handleItemFocus.bind(this);
+    Menu.handleItemBlur = Menu.handleItemBlur.bind(this);
+    Menu.handleItemFocus = Menu.handleItemFocus.bind(this);
     this.handleItemPointerEnter = this.handleItemPointerEnter.bind(this);
     this.handleItemPointerLeave = this.handleItemPointerLeave.bind(this);
-    this.handleCheckboxItemClick = this.handleCheckboxItemClick.bind(this);
+    Menu.handleCheckboxItemClick = Menu.handleCheckboxItemClick.bind(this);
     this.handleRadioItemClick = this.handleRadioItemClick.bind(this);
     this.initialize();
   }
@@ -175,14 +175,14 @@ export default class Menu {
       if ([this.checkboxItemElements, this.radioItemElements].every((list) => !list.includes(item))) {
         item.setAttribute('role', 'menuitem');
       }
-      item.addEventListener('blur', this.handleItemBlur, { signal });
-      item.addEventListener('focus', this.handleItemFocus, { signal });
+      item.addEventListener('blur', Menu.handleItemBlur, { signal });
+      item.addEventListener('focus', Menu.handleItemFocus, { signal });
       item.addEventListener('pointerenter', this.handleItemPointerEnter, { signal });
       item.addEventListener('pointerleave', this.handleItemPointerLeave, { signal });
     });
     this.checkboxItemElements.forEach((item) => {
       item.setAttribute('role', 'menuitemcheckbox');
-      item.addEventListener('click', this.handleCheckboxItemClick, { signal });
+      item.addEventListener('click', Menu.handleCheckboxItemClick, { signal });
     });
     this.radioItemElements.forEach((item) => {
       item.setAttribute('role', 'menuitemradio');
@@ -348,7 +348,7 @@ export default class Menu {
     event.stopPropagation();
     this.open();
     const focusables = this.itemElements.filter(Menu.isFocusable);
-    const length = focusables.length;
+    const { length } = focusables;
     if (!length) return;
     let index = 0;
     switch (key) {
@@ -363,6 +363,8 @@ export default class Menu {
         return;
       case 'ArrowDown':
         index = 0;
+        break;
+      default:
         break;
     }
     focusables[index].focus();
@@ -383,7 +385,7 @@ export default class Menu {
     event.preventDefault();
     event.stopPropagation();
     const focusables = this.itemElements.filter(Menu.isFocusable);
-    const length = focusables.length;
+    const { length } = focusables;
     const active = Menu.getActiveElement()!;
     const currentIndex = focusables.indexOf(active);
     let newIndex = currentIndex;
@@ -410,19 +412,20 @@ export default class Menu {
       case 'ArrowDown':
         newIndex = (currentIndex + 1) % length;
         break;
-      default:
+      default: {
         targetFocusables = this.itemElementsByFirstChar[key.toLowerCase()].filter(Menu.isFocusable);
         const foundIndex = targetFocusables.findIndex((focusable) => focusables.indexOf(focusable) > currentIndex);
         newIndex = foundIndex !== -1 ? foundIndex : 0;
+      }
     }
     targetFocusables[newIndex].focus();
   }
 
-  private handleItemBlur(event: FocusEvent): void {
+  private static handleItemBlur(event: FocusEvent): void {
     (event.currentTarget as HTMLElement).setAttribute('tabindex', '-1');
   }
 
-  private handleItemFocus(event: FocusEvent): void {
+  private static handleItemFocus(event: FocusEvent): void {
     (event.currentTarget as HTMLElement).setAttribute('tabindex', '0');
   }
 
@@ -442,7 +445,7 @@ export default class Menu {
     clearTimeout(this.submenuTimer);
   }
 
-  private handleCheckboxItemClick(event: MouseEvent): void {
+  private static handleCheckboxItemClick(event: MouseEvent): void {
     const item = event.currentTarget as HTMLElement;
     item.setAttribute('aria-checked', String(item.getAttribute('aria-checked') === 'false'));
   }
