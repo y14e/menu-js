@@ -46,7 +46,7 @@ export default class Menu {
   private animation!: Animation | null;
   private controller!: AbortController;
   private destroyed!: boolean;
-  private cleanupPopover!: (() =>) | null;
+  private cleanupPopover!: (() => void) | null;
 
   constructor(root: HTMLElement, options: Partial<MenuOptions> = {}, submenu = false) {
     if (!root) return;
