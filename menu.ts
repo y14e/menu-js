@@ -370,8 +370,6 @@ export default class Menu {
       case 'ArrowDown':
         index = 0;
         break;
-      default:
-        break;
     }
     focusables[index].focus();
   }
