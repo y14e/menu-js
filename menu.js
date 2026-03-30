@@ -8,7 +8,7 @@ export default class Menu {
     this.rootElement = root;
     this.defaults = {
       animation: { duration: 300 },
-      delay: 300,
+      delay: 200,
       popover: {
         menu: {
           arrow: true,
