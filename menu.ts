@@ -254,6 +254,9 @@ export default class Menu {
         easing: 'ease',
       },
     );
+    this.animation.addEventListener('cancel', () => {
+      this.animation = null;
+    });
     this.animation.addEventListener('finish', () => {
       this.animation = null;
       if (!open) {
