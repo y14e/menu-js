@@ -59,8 +59,9 @@ export default class Menu {
         items ||= [];
         items.push(item);
       });
-      if (!shortcuts && keys[0]) {
-        item.setAttribute('aria-keyshortcuts', keys[0]);
+      const key = keys[0];
+      if (!shortcuts && key) {
+        item.setAttribute('aria-keyshortcuts', key);
       }
     });
     this.checkboxItemElements = this.itemElements.filter((item) => item.getAttribute('role') === 'menuitemcheckbox');
