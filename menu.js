@@ -1,4 +1,4 @@
-import { arrow, autoUpdate, computePosition, flip, offset, shift } from 'https://cdn.jsdelivr.net/npm/@floating-ui/dom@1.7.4/+esm';
+import { arrow, autoUpdate, computePosition, flip, offset, shift } from 'https://cdn.jsdelivr.net/npm/@floating-ui/dom@1.7.6/+esm';
 
 export default class Menu {
   static menus = [];
@@ -209,11 +209,12 @@ export default class Menu {
         easing: 'ease',
       },
     );
-    this.animation.addEventListener('cancel', () => {
+    const cleanup = () => {
       this.animation = null;
-    });
+    };
+    this.animation.addEventListener('cancel', cleanup);
     this.animation.addEventListener('finish', () => {
-      this.animation = null;
+      cleanup();
       if (!open) {
         this.listElement.removeAttribute('data-menu-placement');
         this.listElement.style.setProperty('display', 'none');
