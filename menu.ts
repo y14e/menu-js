@@ -255,12 +255,12 @@ export default class Menu {
         easing: 'ease',
       },
     );
-    const cleanup = () => {
+    const cleanupAnimation = () => {
       this.animation = null;
     };
-    this.animation.addEventListener('cancel', cleanup);
+    this.animation.addEventListener('cancel', cleanupAnimation);
     this.animation.addEventListener('finish', () => {
-      cleanup();
+      cleanupAnimation();
       if (!open) {
         this.listElement.removeAttribute('data-menu-placement');
         this.listElement.style.setProperty('display', 'none');
