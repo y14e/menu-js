@@ -435,13 +435,12 @@ export default class Menu {
     this.cleanupPopover = null;
     Menu.menus = Menu.menus.filter((menu) => menu !== this);
     await Promise.all(this.submenus.map((submenu) => submenu.destroy()));
-    if (this.animation) {
-      if (!force) {
-        try {
-          await this.animation.finished;
-        } catch {}
-      }
-      this.animation.cancel();
+    if (!this.animation) return;
+    if (!force) {
+      try {
+        await this.animation.finished;
+      } catch {}
     }
+    this.animation.cancel();
   }
 }
