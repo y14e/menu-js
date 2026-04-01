@@ -7,8 +7,8 @@ interface MenuOptions {
   };
   delay: number;
   popover: {
-    menu: Partial<MenuPopoverOptions>;
-    submenu: Partial<MenuPopoverOptions>;
+    menu: MenuPopoverOptions;
+    submenu: MenuPopoverOptions;
     transformOrigin: boolean;
   };
   selector: {
@@ -33,7 +33,7 @@ export default class Menu {
   private defaults!: MenuOptions;
   private settings!: MenuOptions;
   private isSubmenu!: boolean;
-  private triggerElement!: HTMLElement;
+  private triggerElement!: HTMLElement | null;
   private listElement!: HTMLElement;
   private itemElements!: HTMLElement[];
   private itemElementsByFirstChar!: Record<string, HTMLElement[]>;
@@ -92,8 +92,10 @@ export default class Menu {
       this.settings.animation.duration = 0;
     }
     this.isSubmenu = submenu;
-    this.triggerElement = this.rootElement.querySelector(this.settings.selector[!this.isSubmenu ? 'trigger' : 'item']) as HTMLElement;
-    this.listElement = this.rootElement.querySelector(this.settings.selector.list) as HTMLElement;
+    this.triggerElement = this.rootElement.querySelector(this.settings.selector[!this.isSubmenu ? 'trigger' : 'item']);
+    const list = this.rootElement.querySelector<HTMLElement>(this.settings.selector.list);
+    if (!list) return;
+    this.listElement = list;
     this.itemElements = [...this.listElement.querySelectorAll<HTMLElement>(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} *)`)];
     this.itemElementsByFirstChar = {};
     this.itemElements.forEach((item) => {
@@ -113,18 +115,20 @@ export default class Menu {
     this.radioItemElements = this.itemElements.filter((item) => item.getAttribute('role') === 'menuitemradio');
     this.radioItemElementsByGroup = new Map();
     this.radioItemElements.forEach((item) => {
-      let group = item.closest(this.settings.selector.group) as HTMLElement;
+      let group = item.closest<HTMLElement>(this.settings.selector.group);
       if (!group || !this.rootElement.contains(group)) {
         group = this.rootElement;
       }
-      ((this.radioItemElementsByGroup.get(group) || this.radioItemElementsByGroup.set(group, []).get(group)) as HTMLElement[]).push(item);
+      const items = this.radioItemElementsByGroup.get(group) ?? [];
+      items.push(item);
+      this.radioItemElementsByGroup.set(group, items);
     });
     const setting = this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu'];
     if (setting.arrow) {
       this.arrowElement = document.createElement('div');
       this.arrowElement.setAttribute('data-menu-arrow', '');
       this.listElement.appendChild(this.arrowElement);
-      (setting.middleware as Middleware[]).push(arrow({ element: this.arrowElement }));
+      setting.middleware.push(arrow({ element: this.arrowElement }));
     } else {
       this.arrowElement = null;
     }
@@ -173,7 +177,8 @@ export default class Menu {
     this.listElement.setAttribute('role', 'menu');
     this.listElement.addEventListener('keydown', this.handleListKeyDown, { signal });
     this.itemElements.forEach((item) => {
-      const parent = item.parentElement as HTMLElement;
+      const parent = item.parentElement;
+      if (!(parent instanceof HTMLElement)) return;
       if (parent.querySelector(this.settings.selector.list)) {
         this.submenus.push(new Menu(parent, this.settings, true));
       }
@@ -202,10 +207,10 @@ export default class Menu {
 
   private getActiveElement(): HTMLElement | null {
     let active = document.activeElement;
-    while (active?.shadowRoot?.activeElement) {
+    while (active instanceof HTMLElement && active.shadowRoot?.activeElement) {
       active = active.shadowRoot.activeElement;
     }
-    return active as HTMLElement | null;
+    return active instanceof HTMLElement ? active : null;
   }
 
   private isFocusable(element: HTMLElement): boolean {
@@ -265,8 +270,9 @@ export default class Menu {
         this.listElement.removeAttribute('data-menu-placement');
         this.listElement.style.setProperty('display', 'none');
         ['left', 'top', 'transform-origin'].forEach((name) => this.listElement.style.removeProperty(name));
-        if (this.arrowElement) {
-          ['left', 'rotate', 'top'].forEach((name) => (this.arrowElement as HTMLElement).style.removeProperty(name));
+        const arrow = this.arrowElement;
+        if (arrow) {
+          ['left', 'rotate', 'top'].forEach((name) => arrow.style.removeProperty(name));
         }
       }
       this.listElement.style.removeProperty('opacity');
@@ -279,24 +285,22 @@ export default class Menu {
         this.listElement.style.setProperty('left', `${listX}px`);
         this.listElement.style.setProperty('top', `${listY}px`);
         this.listElement.setAttribute('data-menu-placement', placement);
+        const transformOriginByPlacement: Record<Placement, string> = {
+          top: '50% 100%',
+          'top-start': '0 100%',
+          'top-end': '100% 100%',
+          right: '0 50%',
+          'right-start': '0 0',
+          'right-end': '0 100%',
+          bottom: '50% 0',
+          'bottom-start': '0 0',
+          'bottom-end': '100% 0',
+          left: '100% 50%',
+          'left-start': '100% 0',
+          'left-end': '100% 100%',
+        };
         if (this.settings.popover.transformOrigin) {
-          this.listElement.style.setProperty(
-            'transform-origin',
-            {
-              top: '50% 100%',
-              'top-start': '0 100%',
-              'top-end': '100% 100%',
-              right: '0 50%',
-              'right-start': '0 0',
-              'right-end': '0 100%',
-              bottom: '50% 0',
-              'bottom-start': '0 0',
-              'bottom-end': '100% 0',
-              left: '100% 50%',
-              'left-start': '100% 0',
-              'left-end': '100% 100%',
-            }[placement as Placement],
-          );
+          this.listElement.style.setProperty('transform-origin', transformOriginByPlacement[placement]);
         }
         if (!this.arrowElement) return;
         const arrow = middlewareData.arrow;
@@ -304,7 +308,9 @@ export default class Menu {
         const { x: arrowX, y: arrowY } = arrow;
         this.arrowElement.style.setProperty('left', arrowX != null ? `${arrowX}px` : '');
         this.arrowElement.style.setProperty('top', arrowY != null ? `${arrowY - this.arrowElement.offsetHeight / 2}px` : '');
-        const side = placement.split('-')[0] as Side;
+        const rawSide = placement.split('-')[0];
+        if (!['top', 'right', 'bottom', 'left'].includes(rawSide)) return;
+        const side = rawSide as Side;
         this.arrowElement.style.setProperty('rotate', `${side === 'top' ? 225 : side === 'right' ? 315 : side === 'bottom' ? 45 : 135}deg`);
         this.arrowElement.style.setProperty(
           {
@@ -330,12 +336,14 @@ export default class Menu {
   }
 
   private handleRootFocusIn(event: FocusEvent): void {
-    if (this.rootElement.contains(event.relatedTarget as HTMLElement) && this.rootElement.contains(this.getActiveElement())) return;
+    const related = event.relatedTarget;
+    if (!(related instanceof HTMLElement) || (this.rootElement.contains(related) && this.rootElement.contains(this.getActiveElement()))) return;
     this.resetTabIndex(true);
   }
 
   private handleRootFocusOut(event: FocusEvent): void {
-    if (this.rootElement.contains(event.relatedTarget as HTMLElement)) return;
+    const related = event.relatedTarget;
+    if (!(related instanceof HTMLElement) || this.rootElement.contains(related)) return;
     this.resetTabIndex();
     this.close();
   }
@@ -395,7 +403,8 @@ export default class Menu {
     event.stopPropagation();
     const focusables = this.itemElements.filter(this.isFocusable);
     const { length } = focusables;
-    const active = this.getActiveElement() as HTMLElement;
+    const active = this.getActiveElement();
+    if (!active) return;
     const currentIndex = focusables.indexOf(active);
     let newIndex = currentIndex;
     let targetFocusables = focusables;
@@ -431,16 +440,21 @@ export default class Menu {
   }
 
   private handleItemBlur(event: FocusEvent): void {
-    (event.currentTarget as HTMLElement).setAttribute('tabindex', '-1');
+    const item = event.currentTarget;
+    if (!(item instanceof HTMLElement)) return;
+    item.setAttribute('tabindex', '-1');
   }
 
   private handleItemFocus(event: FocusEvent): void {
-    (event.currentTarget as HTMLElement).setAttribute('tabindex', '0');
+    const item = event.currentTarget;
+    if (!(item instanceof HTMLElement)) return;
+    item.setAttribute('tabindex', '0');
   }
 
   private handleItemPointerEnter(event: PointerEvent): void {
     clearTimeout(this.submenuTimer);
-    const item = event.currentTarget as HTMLElement;
+    const item = event.currentTarget;
+    if (!(item instanceof HTMLElement)) return;
     this.submenuTimer = Number(
       setTimeout(() => {
         this.submenus.forEach((submenu) => submenu.toggle(submenu.triggerElement === item));
@@ -455,13 +469,19 @@ export default class Menu {
   }
 
   private handleCheckboxItemClick(event: MouseEvent): void {
-    const item = event.currentTarget as HTMLElement;
+    const item = event.currentTarget;
+    if (!(item instanceof HTMLElement)) return;
     item.setAttribute('aria-checked', String(item.getAttribute('aria-checked') === 'false'));
   }
 
   private handleRadioItemClick(event: MouseEvent): void {
-    const item = event.currentTarget as HTMLElement;
-    (this.radioItemElementsByGroup.get(item.closest(this.settings.selector.group) || this.rootElement) as HTMLElement[]).forEach((i) => i.setAttribute('aria-checked', String(i === item)));
+    const item = event.currentTarget;
+    if (!(item instanceof HTMLElement)) return;
+    const group = item.closest(this.settings.selector.group) || this.rootElement;
+    if (!(group instanceof HTMLElement)) return;
+    const items = this.radioItemElementsByGroup.get(group);
+    if (!items) return;
+    items.forEach((i) => i.setAttribute('aria-checked', String(i === item)));
   }
 
   open(): void {
