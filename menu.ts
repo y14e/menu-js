@@ -103,7 +103,9 @@ export default class Menu {
       const keys = (shortcuts?.split(/\s+/) ?? [item.textContent.trim()[0]]).filter((key) => /^\S$/i.test(key)).map((key) => key.toLowerCase());
       keys.forEach((key) => {
         let items = this.itemElementsByFirstChar[key];
-        items ||= [];
+        if (!items) {
+          this.itemElementsByFirstChar[key] = items = [];
+        }
         items.push(item);
       });
       const key = keys[0];
