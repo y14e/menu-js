@@ -184,7 +184,7 @@ export default class Menu {
   toggle(open) {
     if (String(open) === this.triggerElement?.getAttribute('aria-expanded')) return;
     if (this.triggerElement) {
-      requestAnimationFrame(() => this.triggerElement.setAttribute('aria-expanded', String(open)));
+      requestAnimationFrame(() => this.triggerElement?.setAttribute('aria-expanded', String(open)));
     }
     if (open) {
       Menu.menus.filter((menu) => !menu.rootElement.contains(this.rootElement)).forEach((menu) => menu.close());
@@ -236,6 +236,7 @@ export default class Menu {
 
   updatePopover() {
     const compute = () => {
+      if (!this.triggerElement) return;
       computePosition(this.triggerElement, this.listElement, this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu']).then(({ x: listX, y: listY, placement, middlewareData }) => {
         this.listElement.style.setProperty('left', `${listX}px`);
         this.listElement.style.setProperty('top', `${listY}px`);
@@ -280,6 +281,7 @@ export default class Menu {
     };
     compute();
     if (!this.cleanupPopover) {
+      if (!this.triggerElement) return;
       this.cleanupPopover = autoUpdate(this.triggerElement, this.listElement, compute);
     }
   }
@@ -306,7 +308,7 @@ export default class Menu {
   handleTriggerClick(event) {
     event.preventDefault();
     if (!this.isSubmenu) {
-      const open = this.triggerElement.getAttribute('aria-expanded') === 'true';
+      const open = this.triggerElement?.getAttribute('aria-expanded') === 'true';
       if (!this.isSubmenu || (event instanceof PointerEvent && event.pointerType !== 'mouse')) {
         this.toggle(!open);
       }
@@ -322,16 +324,15 @@ export default class Menu {
     event.stopPropagation();
     this.open();
     const focusables = this.itemElements.filter(this.isFocusable);
-    const { length } = focusables;
-    if (!length) return;
+    if (!focusables.length) return;
     let index = 0;
     switch (key) {
       case 'Enter':
       case ' ':
-        this.triggerElement.click();
+        this.triggerElement?.click();
         return;
       case 'ArrowUp':
-        index = length - 1;
+        index = -1;
         break;
       case 'ArrowRight':
         return;
@@ -339,7 +340,7 @@ export default class Menu {
         index = 0;
         break;
     }
-    focusables[index].focus();
+    focusables.at(index)?.focus();
   }
 
   handleListKeyDown(event) {
@@ -357,7 +358,6 @@ export default class Menu {
     event.preventDefault();
     event.stopPropagation();
     const focusables = this.itemElements.filter(this.isFocusable);
-    const { length } = focusables;
     const active = this.getActiveElement();
     if (!active) return;
     const currentIndex = focusables.indexOf(active);
@@ -374,16 +374,16 @@ export default class Menu {
         active.click();
         return;
       case 'End':
-        newIndex = length - 1;
+        newIndex = -1;
         break;
       case 'Home':
         newIndex = 0;
         break;
       case 'ArrowUp':
-        newIndex = (currentIndex - 1 + length) % length;
+        newIndex = currentIndex - 1;
         break;
       case 'ArrowDown':
-        newIndex = (currentIndex + 1) % length;
+        newIndex = (currentIndex + 1) % focusables.length;
         break;
       default: {
         targetFocusables = this.itemElementsByFirstChar[key.toLowerCase()].filter(this.isFocusable);
@@ -391,7 +391,7 @@ export default class Menu {
         newIndex = foundIndex !== -1 ? foundIndex : 0;
       }
     }
-    targetFocusables[newIndex].focus();
+    targetFocusables.at(newIndex)?.focus();
   }
 
   handleItemBlur(event) {
