@@ -1,4 +1,4 @@
-import type { Middleware, MiddlewareData, Placement, Side } from '@floating-ui/dom';
+import type { Middleware, MiddlewareData, Placement } from '@floating-ui/dom';
 import { arrow, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
 
 interface MenuOptions {
@@ -311,19 +311,18 @@ export default class Menu {
         const { x: arrowX, y: arrowY } = arrow;
         this.arrowElement.style.setProperty('left', arrowX != null ? `${arrowX}px` : '');
         this.arrowElement.style.setProperty('top', arrowY != null ? `${arrowY - this.arrowElement.offsetHeight / 2}px` : '');
-        const rawSide = placement.split('-')[0];
-        if (!['top', 'right', 'bottom', 'left'].includes(rawSide)) return;
-        const side = rawSide as Side;
-        this.arrowElement.style.setProperty('rotate', `${side === 'top' ? 225 : side === 'right' ? 315 : side === 'bottom' ? 45 : 135}deg`);
-        this.arrowElement.style.setProperty(
-          {
-            top: 'bottom',
-            right: 'left',
-            bottom: 'top',
-            left: 'right',
-          }[side],
-          `${this.arrowElement.offsetWidth / -2}px`,
-        );
+        const arrowStyleBySide: Record<string, { rotate: number; position: string }> = {
+          top: { position: 'bottom', rotate: 225 },
+          right: { position: 'left', rotate: 315 },
+          bottom: { position: 'top', rotate: 45 },
+          left: { position: 'right', rotate: 135 },
+        };
+        const side = placement.split('-')[0];
+        if (!side) return;
+        const style = arrowStyleBySide[side];
+        if (!style) return;
+        this.arrowElement.style.setProperty(style.position, `${this.arrowElement.offsetWidth / -2}px`);
+        this.arrowElement.style.setProperty('rotate', `${style.rotate}deg`);
       });
     };
     compute();
