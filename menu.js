@@ -1,10 +1,8 @@
-import { arrow, autoUpdate, computePosition, flip, offset, shift } from 'https://cdn.jsdelivr.net/npm/@floating-ui/dom@1.7.6/+esm';
-
+import { arrow as arrowMiddleware, autoUpdate, computePosition, flip, offset, shift } from 'https://cdn.jsdelivr.net/npm/@floating-ui/dom@1.7.6/+esm';
 export default class Menu {
   static menus = [];
-
   constructor(root, options = {}, submenu = false) {
-    if (!root) return;
+    if (!root) throw new Error('Root element missing');
     this.rootElement = root;
     this.defaults = {
       animation: { duration: 300 },
@@ -49,29 +47,38 @@ export default class Menu {
     this.isSubmenu = submenu;
     this.triggerElement = this.rootElement.querySelector(this.settings.selector[!this.isSubmenu ? 'trigger' : 'item']);
     const list = this.rootElement.querySelector(this.settings.selector.list);
-    if (!list) return;
+    if (!list) throw new Error('List element missing');
     this.listElement = list;
-    this.itemElements = [...this.listElement.querySelectorAll(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} *)`)];
+    this.itemElements = this.listElement.querySelectorAll(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} *)`);
+    if (this.itemElements.length === 0) throw new Error('Item elements missing');
     this.itemElementsByFirstChar = {};
-    this.itemElements.forEach((item) => {
+    for (const item of this.itemElements) {
       const shortcuts = item.getAttribute('aria-keyshortcuts');
       const keys = (shortcuts?.split(/\s+/) ?? [item.textContent.trim()[0]]).filter((key) => /^\S$/i.test(key)).map((key) => key.toLowerCase());
-      keys.forEach((key) => {
+      for (const key of keys) {
         let items = this.itemElementsByFirstChar[key];
         if (!items) {
-          this.itemElementsByFirstChar[key] = items = [];
+          items = this.itemElementsByFirstChar[key] = [];
         }
         items.push(item);
-      });
-      const key = keys[0];
-      if (!shortcuts && key) {
-        item.setAttribute('aria-keyshortcuts', key);
       }
-    });
-    this.checkboxItemElements = this.itemElements.filter((item) => item.getAttribute('role') === 'menuitemcheckbox');
-    this.radioItemElements = this.itemElements.filter((item) => item.getAttribute('role') === 'menuitemradio');
+      const first = keys[0];
+      if (!shortcuts && first) {
+        item.setAttribute('aria-keyshortcuts', first);
+      }
+    }
+    this.checkboxItemElements = [];
+    this.radioItemElements = [];
+    for (const item of this.itemElements) {
+      const role = item.getAttribute('role');
+      if (role === 'menuitemcheckbox') {
+        this.checkboxItemElements.push(item);
+      } else if (role === 'menuitemradio') {
+        this.radioItemElements.push(item);
+      }
+    }
     this.radioItemElementsByGroup = new Map();
-    this.radioItemElements.forEach((item) => {
+    for (const item of this.radioItemElements) {
       let group = item.closest(this.settings.selector.group);
       if (!group || !this.rootElement.contains(group)) {
         group = this.rootElement;
@@ -79,39 +86,52 @@ export default class Menu {
       const items = this.radioItemElementsByGroup.get(group) ?? [];
       items.push(item);
       this.radioItemElementsByGroup.set(group, items);
-    });
-    const setting = this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu'];
-    if (setting.arrow) {
+    }
+    const settings = this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu'];
+    if (settings.arrow) {
       this.arrowElement = document.createElement('div');
       this.arrowElement.setAttribute('data-menu-arrow', '');
       this.listElement.appendChild(this.arrowElement);
-      setting.middleware.push(arrow({ element: this.arrowElement }));
+      settings.middleware.push(arrowMiddleware({ element: this.arrowElement }));
     } else {
       this.arrowElement = null;
     }
     this.submenus = [];
-    this.submenuTimer = 0;
-    this.animation = null;
     this.controller = new AbortController();
+    this.animation = null;
     this.destroyed = false;
     this.cleanupPopover = null;
-    this.handleOutsidePointerDown = this.handleOutsidePointerDown.bind(this);
-    this.handleRootFocusIn = this.handleRootFocusIn.bind(this);
-    this.handleRootFocusOut = this.handleRootFocusOut.bind(this);
-    this.handleTriggerClick = this.handleTriggerClick.bind(this);
-    this.handleTriggerKeyDown = this.handleTriggerKeyDown.bind(this);
-    this.handleListKeyDown = this.handleListKeyDown.bind(this);
-    this.handleItemBlur = this.handleItemBlur.bind(this);
-    this.handleItemFocus = this.handleItemFocus.bind(this);
-    this.handleItemPointerEnter = this.handleItemPointerEnter.bind(this);
-    this.handleItemPointerLeave = this.handleItemPointerLeave.bind(this);
-    this.handleCheckboxItemClick = this.handleCheckboxItemClick.bind(this);
-    this.handleRadioItemClick = this.handleRadioItemClick.bind(this);
     this.initialize();
   }
 
+  open() {
+    this.toggle(true);
+  }
+
+  close() {
+    this.toggle(false);
+  }
+
+  async destroy(force = false) {
+    if (this.destroyed) return;
+    this.destroyed = true;
+    this.controller.abort();
+    this.clearSubmenuTimer();
+    this.cleanupPopover?.();
+    this.cleanupPopover = null;
+    Menu.menus = Menu.menus.filter((menu) => menu !== this);
+    this.rootElement.removeAttribute('data-menu-initialized');
+    await Promise.all(this.submenus.map((submenu) => submenu.destroy()));
+    if (!this.animation) return;
+    if (!force) {
+      try {
+        await this.animation.finished;
+      } catch {}
+    }
+    this.animation.cancel();
+  }
+
   initialize() {
-    if (!this.listElement || !this.itemElements.length) return;
     const { signal } = this.controller;
     document.addEventListener('pointerdown', this.handleOutsidePointerDown, { signal });
     this.rootElement.addEventListener('focusin', this.handleRootFocusIn, { signal });
@@ -133,7 +153,7 @@ export default class Menu {
     }
     this.listElement.setAttribute('role', 'menu');
     this.listElement.addEventListener('keydown', this.handleListKeyDown, { signal });
-    this.itemElements.forEach((item) => {
+    for (const item of this.itemElements) {
       const parent = item.parentElement;
       if (!(parent instanceof HTMLElement)) return;
       if (parent.querySelector(this.settings.selector.list)) {
@@ -146,15 +166,15 @@ export default class Menu {
       item.addEventListener('focus', this.handleItemFocus, { signal });
       item.addEventListener('pointerenter', this.handleItemPointerEnter, { signal });
       item.addEventListener('pointerleave', this.handleItemPointerLeave, { signal });
-    });
-    this.checkboxItemElements.forEach((item) => {
+    }
+    for (const item of this.checkboxItemElements) {
       item.setAttribute('role', 'menuitemcheckbox');
       item.addEventListener('click', this.handleCheckboxItemClick, { signal });
-    });
-    this.radioItemElements.forEach((item) => {
+    }
+    for (const item of this.radioItemElements) {
       item.setAttribute('role', 'menuitemradio');
       item.addEventListener('click', this.handleRadioItemClick, { signal });
-    });
+    }
     this.resetTabIndex();
     if (!this.isSubmenu) {
       this.rootElement.setAttribute('data-menu-initialized', '');
@@ -162,151 +182,26 @@ export default class Menu {
     Menu.menus.push(this);
   }
 
-  getActiveElement() {
-    let active = document.activeElement;
-    while (active instanceof HTMLElement && active.shadowRoot?.activeElement) {
-      active = active.shadowRoot.activeElement;
-    }
-    return active instanceof HTMLElement ? active : null;
-  }
-
-  isFocusable(element) {
-    return element.getAttribute('aria-disabled') !== 'true' && !element.hasAttribute('disabled');
-  }
-
-  resetTabIndex(force = false) {
-    if (this.triggerElement || force) {
-      this.itemElements.forEach((item) => item.setAttribute('tabindex', '-1'));
-    } else {
-      const first = this.itemElements.find((item) => this.isFocusable(item));
-      this.itemElements.forEach((item) => item.setAttribute('tabindex', item === first ? '0' : '-1'));
-    }
-  }
-
-  toggle(open) {
-    if (String(open) === this.triggerElement?.getAttribute('aria-expanded')) return;
-    if (this.triggerElement) {
-      requestAnimationFrame(() => this.triggerElement?.setAttribute('aria-expanded', String(open)));
-    }
-    if (open) {
-      Menu.menus.filter((menu) => !menu.rootElement.contains(this.rootElement)).forEach((menu) => menu.close());
-      this.listElement.style.setProperty('display', 'block');
-      this.listElement.style.setProperty('opacity', '0');
-      if (this.triggerElement) {
-        this.updatePopover();
-      }
-      this.itemElements.find(this.isFocusable)?.focus();
-    } else {
-      clearTimeout(this.submenuTimer);
-      this.submenus.forEach((submenu) => submenu.close());
-      if (this.triggerElement && this.rootElement.contains(this.getActiveElement())) {
-        this.triggerElement.focus();
-      }
-    }
-    if (!this.triggerElement) return;
-    if (!open) {
-      this.cleanupPopover?.();
-      this.cleanupPopover = null;
-    }
-    const opacity = getComputedStyle(this.listElement).getPropertyValue('opacity');
-    this.animation?.cancel();
-    this.animation = this.listElement.animate(
-      { opacity: open ? [opacity, '1'] : [opacity, '0'] },
-      {
-        duration: this.settings.animation.duration,
-        easing: 'ease',
-      },
-    );
-    const cleanupAnimation = () => {
-      this.animation = null;
-    };
-    this.animation.addEventListener('cancel', cleanupAnimation);
-    this.animation.addEventListener('finish', () => {
-      cleanupAnimation();
-      if (!open) {
-        this.listElement.removeAttribute('data-menu-placement');
-        this.listElement.style.setProperty('display', 'none');
-        ['left', 'top', 'transform-origin'].forEach((name) => this.listElement.style.removeProperty(name));
-        const arrow = this.arrowElement;
-        if (arrow) {
-          ['left', 'rotate', 'top'].forEach((name) => arrow.style.removeProperty(name));
-        }
-      }
-      this.listElement.style.removeProperty('opacity');
-    });
-  }
-
-  updatePopover() {
-    const compute = () => {
-      if (!this.triggerElement) return;
-      computePosition(this.triggerElement, this.listElement, this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu']).then(({ x: listX, y: listY, placement, middlewareData }) => {
-        this.listElement.style.setProperty('left', `${listX}px`);
-        this.listElement.style.setProperty('top', `${listY}px`);
-        this.listElement.setAttribute('data-menu-placement', placement);
-        const transformOriginByPlacement = {
-          top: '50% 100%',
-          'top-start': '0 100%',
-          'top-end': '100% 100%',
-          right: '0 50%',
-          'right-start': '0 0',
-          'right-end': '0 100%',
-          bottom: '50% 0',
-          'bottom-start': '0 0',
-          'bottom-end': '100% 0',
-          left: '100% 50%',
-          'left-start': '100% 0',
-          'left-end': '100% 100%',
-        };
-        if (this.settings.popover.transformOrigin) {
-          this.listElement.style.setProperty('transform-origin', transformOriginByPlacement[placement]);
-        }
-        if (!this.arrowElement) return;
-        const arrow = middlewareData.arrow;
-        if (!arrow) return;
-        const { x: arrowX, y: arrowY } = arrow;
-        this.arrowElement.style.setProperty('left', arrowX != null ? `${arrowX}px` : '');
-        this.arrowElement.style.setProperty('top', arrowY != null ? `${arrowY - this.arrowElement.offsetHeight / 2}px` : '');
-        const arrowStyleBySide = {
-          top: { position: 'bottom', rotate: 225 },
-          right: { position: 'left', rotate: 315 },
-          bottom: { position: 'top', rotate: 45 },
-          left: { position: 'right', rotate: 135 },
-        };
-        const side = placement.split('-')[0];
-        if (!side) return;
-        const style = arrowStyleBySide[side];
-        if (!style) return;
-        this.arrowElement.style.setProperty(style.position, `${this.arrowElement.offsetWidth / -2}px`);
-        this.arrowElement.style.setProperty('rotate', `${style.rotate}deg`);
-      });
-    };
-    compute();
-    if (!this.cleanupPopover) {
-      if (!this.triggerElement) return;
-      this.cleanupPopover = autoUpdate(this.triggerElement, this.listElement, compute);
-    }
-  }
-
-  handleOutsidePointerDown(event) {
+  handleOutsidePointerDown = (event) => {
     if (event.composedPath().includes(this.rootElement) || !this.triggerElement) return;
     this.resetTabIndex();
     this.close();
-  }
+  };
 
-  handleRootFocusIn(event) {
+  handleRootFocusIn = (event) => {
     const related = event.relatedTarget;
     if (!(related instanceof HTMLElement) || (this.rootElement.contains(related) && this.rootElement.contains(this.getActiveElement()))) return;
     this.resetTabIndex(true);
-  }
+  };
 
-  handleRootFocusOut(event) {
+  handleRootFocusOut = (event) => {
     const related = event.relatedTarget;
     if (!(related instanceof HTMLElement) || this.rootElement.contains(related)) return;
     this.resetTabIndex();
     this.close();
-  }
+  };
 
-  handleTriggerClick(event) {
+  handleTriggerClick = (event) => {
     event.preventDefault();
     if (!this.isSubmenu) {
       const open = this.triggerElement?.getAttribute('aria-expanded') === 'true';
@@ -316,16 +211,21 @@ export default class Menu {
     } else {
       this.toggle(this.triggerElement === event.currentTarget);
     }
-  }
+  };
 
-  handleTriggerKeyDown(event) {
+  handleTriggerKeyDown = (event) => {
     const { key } = event;
     if (!['Enter', ' ', ...(!this.isSubmenu ? ['ArrowUp', 'ArrowDown'] : ['ArrowRight'])].includes(key)) return;
     event.preventDefault();
     event.stopPropagation();
     this.open();
-    const focusables = this.itemElements.filter(this.isFocusable);
-    if (!focusables.length) return;
+    const focusables = [];
+    for (const item of this.itemElements) {
+      if (this.isFocusable(item)) {
+        focusables.push(item);
+      }
+    }
+    if (focusables.length === 0) return;
     let index = 0;
     switch (key) {
       case 'Enter':
@@ -342,15 +242,15 @@ export default class Menu {
         break;
     }
     focusables.at(index)?.focus();
-  }
+  };
 
-  handleListKeyDown(event) {
+  handleListKeyDown = (event) => {
     const { shiftKey, key } = event;
     if (key === 'Tab' && ((!this.triggerElement && shiftKey) || !shiftKey)) return;
     if (!['Enter', 'Escape', ' ', 'End', 'Home', ...(this.isSubmenu ? ['ArrowLeft'] : []), 'ArrowUp', 'ArrowDown'].includes(key)) {
-      const isCharKey = /^\S$/i.test(key);
-      if (!isCharKey || !this.itemElementsByFirstChar[key.toLowerCase()]?.some(this.isFocusable)) {
-        if (isCharKey) {
+      const char = /^\S$/i.test(key);
+      if (!char || !this.itemElementsByFirstChar[key.toLowerCase()]?.some(this.isFocusable)) {
+        if (char) {
           event.stopPropagation();
         }
         return;
@@ -358,7 +258,12 @@ export default class Menu {
     }
     event.preventDefault();
     event.stopPropagation();
-    const focusables = this.itemElements.filter(this.isFocusable);
+    const focusables = [];
+    for (const item of this.itemElements) {
+      if (this.isFocusable(item)) {
+        focusables.push(item);
+      }
+    }
     const active = this.getActiveElement();
     if (!active) return;
     const currentIndex = focusables.indexOf(active);
@@ -388,82 +293,217 @@ export default class Menu {
         break;
       default: {
         targetFocusables = this.itemElementsByFirstChar[key.toLowerCase()].filter(this.isFocusable);
-        const foundIndex = targetFocusables.findIndex((focusable) => focusables.indexOf(focusable) > currentIndex);
+        const indexes = new Map();
+        for (let i = 0, l = focusables.length; i < l; i++) {
+          indexes.set(focusables[i], i);
+        }
+        let foundIndex = -1;
+        for (let i = 0, l = targetFocusables.length; i < l; i++) {
+          const index = indexes.get(targetFocusables[i]);
+          if (index !== undefined && index > currentIndex) {
+            foundIndex = i;
+            break;
+          }
+        }
         newIndex = foundIndex !== -1 ? foundIndex : 0;
       }
     }
     targetFocusables.at(newIndex)?.focus();
-  }
+  };
 
-  handleItemBlur(event) {
+  handleItemBlur = (event) => {
     const item = event.currentTarget;
     if (!(item instanceof HTMLElement)) return;
     item.setAttribute('tabindex', '-1');
-  }
+  };
 
-  handleItemFocus(event) {
+  handleItemFocus = (event) => {
     const item = event.currentTarget;
     if (!(item instanceof HTMLElement)) return;
     item.setAttribute('tabindex', '0');
-  }
+  };
 
-  handleItemPointerEnter(event) {
-    clearTimeout(this.submenuTimer);
+  handleItemPointerEnter = (event) => {
+    this.clearSubmenuTimer();
     const item = event.currentTarget;
     if (!(item instanceof HTMLElement)) return;
-    this.submenuTimer = Number(
-      setTimeout(() => {
-        this.submenus.forEach((submenu) => submenu.toggle(submenu.triggerElement === item));
-        item.setAttribute('tabindex', '0');
-        item.focus();
-      }, this.settings.delay),
-    );
-  }
+    this.timer = setTimeout(() => {
+      for (const submenu of this.submenus) {
+        submenu.toggle(submenu.triggerElement === item);
+      }
+      item.setAttribute('tabindex', '0');
+      item.focus();
+    }, this.settings.delay);
+  };
 
-  handleItemPointerLeave() {
-    clearTimeout(this.submenuTimer);
-  }
+  handleItemPointerLeave = () => {
+    this.clearSubmenuTimer();
+  };
 
-  handleCheckboxItemClick(event) {
+  handleCheckboxItemClick = (event) => {
     const item = event.currentTarget;
     if (!(item instanceof HTMLElement)) return;
     item.setAttribute('aria-checked', String(item.getAttribute('aria-checked') === 'false'));
-  }
+  };
 
-  handleRadioItemClick(event) {
+  handleRadioItemClick = (event) => {
     const item = event.currentTarget;
     if (!(item instanceof HTMLElement)) return;
-    const group = item.closest(this.settings.selector.group) || this.rootElement;
+    const group = item.closest(this.settings.selector.group) ?? this.rootElement;
     if (!(group instanceof HTMLElement)) return;
     const items = this.radioItemElementsByGroup.get(group);
     if (!items) return;
-    items.forEach((i) => i.setAttribute('aria-checked', String(i === item)));
-  }
-
-  open() {
-    this.toggle(true);
-  }
-
-  close() {
-    this.toggle(false);
-  }
-
-  async destroy(force = false) {
-    if (this.destroyed) return;
-    this.destroyed = true;
-    this.rootElement.removeAttribute('data-menu-initialized');
-    this.controller.abort();
-    clearTimeout(this.submenuTimer);
-    this.cleanupPopover?.();
-    this.cleanupPopover = null;
-    Menu.menus = Menu.menus.filter((menu) => menu !== this);
-    await Promise.all(this.submenus.map((submenu) => submenu.destroy()));
-    if (!this.animation) return;
-    if (!force) {
-      try {
-        await this.animation.finished;
-      } catch {}
+    for (const i of items) {
+      i.setAttribute('aria-checked', String(i === item));
     }
-    this.animation.cancel();
+  };
+
+  toggle(open) {
+    if (String(open) === this.triggerElement?.getAttribute('aria-expanded')) return;
+    if (this.triggerElement) {
+      requestAnimationFrame(() => this.triggerElement?.setAttribute('aria-expanded', String(open)));
+    }
+    if (open) {
+      for (const menu of Menu.menus.filter((m) => !m.rootElement.contains(this.rootElement))) {
+        menu.close();
+      }
+      this.listElement.style.setProperty('display', 'block');
+      this.listElement.style.setProperty('opacity', '0');
+      if (this.triggerElement) {
+        this.updatePopover();
+      }
+      for (const item of this.itemElements) {
+        if (this.isFocusable(item)) {
+          item.focus();
+          break;
+        }
+      }
+    } else {
+      this.clearSubmenuTimer();
+      for (const submenu of this.submenus) {
+        submenu.close();
+      }
+      if (this.triggerElement && this.rootElement.contains(this.getActiveElement())) {
+        this.triggerElement.focus();
+      }
+    }
+    if (!this.triggerElement) return;
+    if (!open) {
+      this.cleanupPopover?.();
+      this.cleanupPopover = null;
+    }
+    const opacity = getComputedStyle(this.listElement).getPropertyValue('opacity');
+    this.animation?.cancel();
+    this.animation = this.listElement.animate(
+      { opacity: open ? [opacity, '1'] : [opacity, '0'] },
+      {
+        duration: this.settings.animation.duration,
+        easing: 'ease',
+      },
+    );
+    const cleanupAnimation = () => {
+      this.animation = null;
+    };
+    this.animation.addEventListener('cancel', cleanupAnimation);
+    this.animation.addEventListener('finish', () => {
+      cleanupAnimation();
+      if (!open) {
+        this.listElement.removeAttribute('data-menu-placement');
+        this.listElement.style.setProperty('display', 'none');
+        ['left', 'top', 'transform-origin'].forEach((prop) => this.listElement.style.removeProperty(prop));
+        const arrow = this.arrowElement;
+        if (arrow) {
+          ['left', 'rotate', 'top'].forEach((prop) => arrow.style.removeProperty(prop));
+        }
+      }
+      this.listElement.style.removeProperty('opacity');
+    });
+  }
+
+  clearSubmenuTimer() {
+    if (this.timer !== undefined) {
+      clearTimeout(this.timer);
+      this.timer = undefined;
+    }
+  }
+
+  getActiveElement() {
+    let active = document.activeElement;
+    while (active instanceof HTMLElement && active.shadowRoot?.activeElement) {
+      active = active.shadowRoot.activeElement;
+    }
+    return active instanceof HTMLElement ? active : null;
+  }
+
+  isFocusable(element) {
+    return element.getAttribute('aria-disabled') !== 'true' && !element.hasAttribute('disabled');
+  }
+
+  resetTabIndex(force = false) {
+    if (this.triggerElement || force) {
+      for (const item of this.itemElements) {
+        item.setAttribute('tabindex', '-1');
+      }
+    } else {
+      let found = false;
+      for (const item of this.itemElements) {
+        if (!found && this.isFocusable(item)) {
+          item.setAttribute('tabindex', '0');
+          found = true;
+        } else {
+          item.setAttribute('tabindex', '-1');
+        }
+      }
+    }
+  }
+
+  updatePopover() {
+    if (!this.triggerElement) return;
+    const compute = () => {
+      computePosition(this.triggerElement, this.listElement, this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu']).then(({ x: listX, y: listY, placement, middlewareData }) => {
+        this.listElement.style.setProperty('left', `${listX}px`);
+        this.listElement.style.setProperty('top', `${listY}px`);
+        this.listElement.setAttribute('data-menu-placement', placement);
+        const transformOriginByPlacement = {
+          top: '50% 100%',
+          'top-start': '0 100%',
+          'top-end': '100% 100%',
+          right: '0 50%',
+          'right-start': '0 0',
+          'right-end': '0 100%',
+          bottom: '50% 0',
+          'bottom-start': '0 0',
+          'bottom-end': '100% 0',
+          left: '100% 50%',
+          'left-start': '100% 0',
+          'left-end': '100% 100%',
+        };
+        if (this.settings.popover.transformOrigin) {
+          this.listElement.style.setProperty('transform-origin', transformOriginByPlacement[placement]);
+        }
+        if (!this.arrowElement) return;
+        const arrow = middlewareData.arrow;
+        if (!arrow) return;
+        const { x: arrowX, y: arrowY } = arrow;
+        this.arrowElement.style.setProperty('left', arrowX != null ? `${arrowX}px` : '');
+        this.arrowElement.style.setProperty('top', arrowY != null ? `${arrowY - this.arrowElement.offsetHeight / 2}px` : '');
+        const arrowStyleBySide = {
+          top: { position: 'bottom', rotate: '225deg' },
+          right: { position: 'left', rotate: '315deg' },
+          bottom: { position: 'top', rotate: '45deg' },
+          left: { position: 'right', rotate: '135deg' },
+        };
+        const side = placement.split('-')[0];
+        if (!side) return;
+        const style = arrowStyleBySide[side];
+        if (!style) return;
+        this.arrowElement.style.setProperty(style.position, `${this.arrowElement.offsetWidth / -2}px`);
+        this.arrowElement.style.setProperty('rotate', style.rotate);
+      });
+    };
+    compute();
+    if (!this.cleanupPopover) {
+      this.cleanupPopover = autoUpdate(this.triggerElement, this.listElement, compute);
+    }
   }
 }
