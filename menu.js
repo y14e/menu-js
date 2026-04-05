@@ -96,9 +96,10 @@ export default class Menu {
     } else {
       this.arrowElement = null;
     }
-    this.submenus = [];
     this.controller = new AbortController();
     this.animation = null;
+    this.submenus = [];
+    this.submenuTimer = undefined;
     this.destroyed = false;
     this.cleanupPopover = null;
     this.initialize();

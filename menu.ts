@@ -41,10 +41,10 @@ export default class Menu {
   private readonly radioItemElements: HTMLElement[] = [];
   private readonly radioItemElementsByGroup: Map<HTMLElement, HTMLElement[]> = new Map();
   private readonly arrowElement: HTMLElement | null;
-  private readonly submenus: Menu[] = [];
   private readonly controller = new AbortController();
-  private timer: ReturnType<typeof setTimeout> | undefined;
   private animation: Animation | null = null;
+  private readonly submenus: Menu[] = [];
+  private submenuTimer: ReturnType<typeof setTimeout> | undefined;
   private destroyed = false;
   private cleanupPopover: (() => void) | null = null;
 
@@ -365,7 +365,7 @@ export default class Menu {
     this.clearSubmenuTimer();
     const item = event.currentTarget;
     if (!(item instanceof HTMLElement)) return;
-    this.timer = setTimeout(() => {
+    this.submenuTimer = setTimeout(() => {
       for (const submenu of this.submenus) {
         submenu.toggle(submenu.triggerElement === item);
       }
@@ -459,9 +459,9 @@ export default class Menu {
   }
 
   private clearSubmenuTimer(): void {
-    if (this.timer !== undefined) {
-      clearTimeout(this.timer);
-      this.timer = undefined;
+    if (this.submenuTimer !== undefined) {
+      clearTimeout(this.submenuTimer);
+      this.submenuTimer = undefined;
     }
   }
 
