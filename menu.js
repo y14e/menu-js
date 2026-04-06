@@ -45,11 +45,12 @@ export default class Menu {
       this.settings.animation.duration = 0;
     }
     this.isSubmenu = submenu;
-    this.triggerElement = this.rootElement.querySelector(this.settings.selector[!this.isSubmenu ? 'trigger' : 'item']);
-    const list = this.rootElement.querySelector(this.settings.selector.list);
+    const { selector } = this.settings;
+    this.triggerElement = this.rootElement.querySelector(selector[!this.isSubmenu ? 'trigger' : 'item']);
+    const list = this.rootElement.querySelector(selector.list);
     if (!list) throw new Error('List element missing');
     this.listElement = list;
-    this.itemElements = this.listElement.querySelectorAll(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} *)`);
+    this.itemElements = this.listElement.querySelectorAll(`${selector.item}:not(:scope ${selector.list} *)`);
     if (this.itemElements.length === 0) throw new Error('Item elements missing');
     this.itemElementsByFirstChar = {};
     for (const item of this.itemElements) {
@@ -79,7 +80,7 @@ export default class Menu {
     }
     this.radioItemElementsByGroup = new Map();
     for (const item of this.radioItemElements) {
-      let group = item.closest(this.settings.selector.group);
+      let group = item.closest(selector.group);
       if (!group || !this.rootElement.contains(group)) {
         group = this.rootElement;
       }
@@ -395,13 +396,8 @@ export default class Menu {
     }
     const opacity = getComputedStyle(this.listElement).getPropertyValue('opacity');
     this.animation?.cancel();
-    this.animation = this.listElement.animate(
-      { opacity: open ? [opacity, '1'] : [opacity, '0'] },
-      {
-        duration: this.settings.animation.duration,
-        easing: 'ease',
-      },
-    );
+    const { duration } = this.settings.animation;
+    this.animation = this.listElement.animate({ opacity: open ? [opacity, '1'] : [opacity, '0'] }, { duration, easing: 'ease' });
     const cleanupAnimation = () => {
       this.animation = null;
     };

@@ -92,11 +92,12 @@ export default class Menu {
       this.settings.animation.duration = 0;
     }
     this.isSubmenu = submenu;
-    this.triggerElement = this.rootElement.querySelector<HTMLElement>(this.settings.selector[!this.isSubmenu ? 'trigger' : 'item']);
-    const list = this.rootElement.querySelector<HTMLElement>(this.settings.selector.list);
+    const { selector } = this.settings;
+    this.triggerElement = this.rootElement.querySelector<HTMLElement>(selector[!this.isSubmenu ? 'trigger' : 'item']);
+    const list = this.rootElement.querySelector<HTMLElement>(selector.list);
     if (!list) throw new Error('List element missing');
     this.listElement = list;
-    this.itemElements = this.listElement.querySelectorAll<HTMLElement>(`${this.settings.selector.item}:not(:scope ${this.settings.selector.list} *)`);
+    this.itemElements = this.listElement.querySelectorAll<HTMLElement>(`${selector.item}:not(:scope ${selector.list} *)`);
     if (this.itemElements.length === 0) throw new Error('Item elements missing');
     for (const item of this.itemElements) {
       const shortcuts = item.getAttribute('aria-keyshortcuts');
@@ -122,7 +123,7 @@ export default class Menu {
       }
     }
     for (const item of this.radioItemElements) {
-      let group = item.closest<HTMLElement>(this.settings.selector.group);
+      let group = item.closest<HTMLElement>(selector.group);
       if (!group || !this.rootElement.contains(group)) {
         group = this.rootElement;
       }
@@ -432,13 +433,8 @@ export default class Menu {
     }
     const opacity = getComputedStyle(this.listElement).getPropertyValue('opacity');
     this.animation?.cancel();
-    this.animation = this.listElement.animate(
-      { opacity: open ? [opacity, '1'] : [opacity, '0'] },
-      {
-        duration: this.settings.animation.duration,
-        easing: 'ease',
-      },
-    );
+    const { duration } = this.settings.animation;
+    this.animation = this.listElement.animate({ opacity: open ? [opacity, '1'] : [opacity, '0'] }, { duration, easing: 'ease' });
     const cleanupAnimation = () => {
       this.animation = null;
     };
