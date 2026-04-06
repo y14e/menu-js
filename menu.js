@@ -192,13 +192,13 @@ export default class Menu {
 
   handleRootFocusIn = (event) => {
     const related = event.relatedTarget;
-    if (!(related instanceof HTMLElement) || (this.rootElement.contains(related) && this.rootElement.contains(this.getActiveElement()))) return;
+    if (related instanceof Node && this.rootElement.contains(related) && this.rootElement.contains(this.getActiveElement())) return;
     this.resetTabIndex(true);
   };
 
   handleRootFocusOut = (event) => {
     const related = event.relatedTarget;
-    if (!(related instanceof HTMLElement) || this.rootElement.contains(related)) return;
+    if (related instanceof Node && this.rootElement.contains(related)) return;
     this.resetTabIndex();
     this.close();
   };
