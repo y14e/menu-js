@@ -207,11 +207,11 @@ export default class Menu {
     event.preventDefault();
     if (!this.isSubmenu) {
       const open = this.triggerElement?.getAttribute('aria-expanded') === 'true';
-      if (!this.isSubmenu || (event instanceof PointerEvent && event.pointerType !== 'mouse')) {
+      if (event instanceof PointerEvent && event.pointerType !== 'mouse') {
         this.toggle(!open);
       }
     } else {
-      this.toggle(this.triggerElement === event.currentTarget);
+      this.toggle(event.currentTarget === this.triggerElement);
     }
   };
 
