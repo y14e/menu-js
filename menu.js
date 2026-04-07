@@ -205,14 +205,7 @@ export default class Menu {
 
   handleTriggerClick = (event) => {
     event.preventDefault();
-    if (!this.isSubmenu) {
-      const open = this.triggerElement?.getAttribute('aria-expanded') === 'true';
-      if (event instanceof PointerEvent && event.pointerType !== 'mouse') {
-        this.toggle(!open);
-      }
-    } else {
-      this.toggle(event.currentTarget === this.triggerElement);
-    }
+    this.toggle(!this.isSubmenu ? this.triggerElement?.getAttribute('aria-expanded') !== 'true' : event.currentTarget === this.triggerElement);
   };
 
   handleTriggerKeyDown = (event) => {
