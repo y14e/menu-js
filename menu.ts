@@ -31,6 +31,7 @@ type DeepRequired<T> = T extends (...args: unknown[]) => unknown ? T : T extends
 
 export default class Menu {
   private static menus: Menu[] = [];
+
   private readonly rootElement: HTMLElement;
   private readonly defaults: DeepRequired<MenuOptions> = {
     animation: { duration: 300 },
