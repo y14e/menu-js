@@ -1,9 +1,9 @@
-import { arrow as arrowMiddleware, autoUpdate, computePosition, flip, offset, shift } from 'https://cdn.jsdelivr.net/npm/@floating-ui/dom@1.7.6/+esm';
+import { arrow, autoUpdate, computePosition, flip, offset, shift } from 'https://cdn.jsdelivr.net/npm/@floating-ui/dom@1.7.6/+esm';
+
 export default class Menu {
   static menus = [];
+
   constructor(root, options = {}, submenu = false) {
-    if (!root) throw new Error('Root element missing');
-    this.rootElement = root;
     this.defaults = {
       animation: { duration: 300 },
       delay: 200,
@@ -29,6 +29,17 @@ export default class Menu {
         trigger: '[data-menu-trigger]',
       },
     };
+    this.itemElementsByFirstChar = {};
+    this.checkboxItemElements = [];
+    this.radioItemElements = [];
+    this.radioItemElementsByGroup = new Map();
+    this.eventController = new AbortController();
+    this.animation = null;
+    this.submenus = [];
+    this.destroyed = false;
+    this.cleanupPopover = null;
+    if (!root) throw new Error('Root element missing');
+    this.rootElement = root;
     this.settings = {
       ...this.defaults,
       ...options,
@@ -52,7 +63,6 @@ export default class Menu {
     this.listElement = list;
     this.itemElements = this.listElement.querySelectorAll(`${selector.item}:not(:scope ${selector.list} *)`);
     if (this.itemElements.length === 0) throw new Error('Item elements missing');
-    this.itemElementsByFirstChar = {};
     for (const item of this.itemElements) {
       const shortcuts = item.getAttribute('aria-keyshortcuts');
       const keys = (shortcuts?.split(/\s+/) ?? [item.textContent.trim()[0]]).filter((key) => /^\S$/i.test(key)).map((key) => key.toLowerCase());
@@ -68,8 +78,6 @@ export default class Menu {
         item.setAttribute('aria-keyshortcuts', first);
       }
     }
-    this.checkboxItemElements = [];
-    this.radioItemElements = [];
     for (const item of this.itemElements) {
       const role = item.getAttribute('role');
       if (role === 'menuitemcheckbox') {
@@ -78,7 +86,6 @@ export default class Menu {
         this.radioItemElements.push(item);
       }
     }
-    this.radioItemElementsByGroup = new Map();
     for (const item of this.radioItemElements) {
       let group = item.closest(selector.group);
       if (!group || !this.rootElement.contains(group)) {
@@ -93,16 +100,10 @@ export default class Menu {
       this.arrowElement = document.createElement('div');
       this.arrowElement.setAttribute('data-menu-arrow', '');
       this.listElement.appendChild(this.arrowElement);
-      settings.middleware.push(arrowMiddleware({ element: this.arrowElement }));
+      settings.middleware.push(arrow({ element: this.arrowElement }));
     } else {
       this.arrowElement = null;
     }
-    this.controller = new AbortController();
-    this.animation = null;
-    this.submenus = [];
-    this.submenuTimer = undefined;
-    this.destroyed = false;
-    this.cleanupPopover = null;
     this.initialize();
   }
 
@@ -117,7 +118,7 @@ export default class Menu {
   async destroy(force = false) {
     if (this.destroyed) return;
     this.destroyed = true;
-    this.controller.abort();
+    this.eventController.abort();
     this.clearSubmenuTimer();
     this.cleanupPopover?.();
     this.cleanupPopover = null;
@@ -134,7 +135,7 @@ export default class Menu {
   }
 
   initialize() {
-    const { signal } = this.controller;
+    const { signal } = this.eventController;
     document.addEventListener('pointerdown', this.handleOutsidePointerDown, { signal });
     this.rootElement.addEventListener('focusin', this.handleRootFocusIn, { signal });
     this.rootElement.addEventListener('focusout', this.handleRootFocusOut, { signal });
@@ -322,7 +323,7 @@ export default class Menu {
     this.clearSubmenuTimer();
     const item = event.currentTarget;
     if (!(item instanceof HTMLElement)) return;
-    this.timer = setTimeout(() => {
+    this.submenuTimer = setTimeout(() => {
       for (const submenu of this.submenus) {
         submenu.toggle(submenu.triggerElement === item);
       }
@@ -401,9 +402,8 @@ export default class Menu {
         this.listElement.removeAttribute('data-menu-placement');
         this.listElement.style.setProperty('display', 'none');
         ['left', 'top', 'transform-origin'].forEach((prop) => this.listElement.style.removeProperty(prop));
-        const arrow = this.arrowElement;
-        if (arrow) {
-          ['left', 'rotate', 'top'].forEach((prop) => arrow.style.removeProperty(prop));
+        if (this.arrowElement) {
+          ['left', 'rotate', 'top'].forEach((prop) => this.arrowElement?.style.removeProperty(prop));
         }
       }
       this.listElement.style.removeProperty('opacity');
@@ -411,9 +411,9 @@ export default class Menu {
   }
 
   clearSubmenuTimer() {
-    if (this.timer !== undefined) {
-      clearTimeout(this.timer);
-      this.timer = undefined;
+    if (this.submenuTimer !== undefined) {
+      clearTimeout(this.submenuTimer);
+      this.submenuTimer = undefined;
     }
   }
 
@@ -472,9 +472,9 @@ export default class Menu {
           this.listElement.style.setProperty('transform-origin', transformOriginByPlacement[placement]);
         }
         if (!this.arrowElement) return;
-        const arrow = middlewareData.arrow;
-        if (!arrow) return;
-        const { x: arrowX, y: arrowY } = arrow;
+        const data = middlewareData.arrow;
+        if (!data) return;
+        const { x: arrowX, y: arrowY } = data;
         this.arrowElement.style.setProperty('left', arrowX != null ? `${arrowX}px` : '');
         this.arrowElement.style.setProperty('top', arrowY != null ? `${arrowY - this.arrowElement.offsetHeight / 2}px` : '');
         const arrowStyleBySide = {

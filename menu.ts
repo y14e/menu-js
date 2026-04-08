@@ -1,37 +1,63 @@
 import type { Middleware, MiddlewareData, Placement } from '@floating-ui/dom';
-import { arrow as arrowMiddleware, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
+import { arrow, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
 
 interface MenuOptions {
-  animation: {
-    duration: number;
+  animation?: {
+    duration?: number;
   };
-  delay: number;
-  popover: {
-    menu: MenuPopoverOptions;
-    submenu: MenuPopoverOptions;
-    transformOrigin: boolean;
+  delay?: number;
+  popover?: {
+    menu?: MenuPopoverOptions;
+    submenu?: MenuPopoverOptions;
+    transformOrigin?: boolean;
   };
-  selector: {
-    checkboxItem: string;
-    group: string;
-    item: string;
-    list: string;
-    radioItem: string;
-    trigger: string;
+  selector?: {
+    checkboxItem?: string;
+    group?: string;
+    item?: string;
+    list?: string;
+    radioItem?: string;
+    trigger?: string;
   };
 }
 
 interface MenuPopoverOptions {
-  arrow: boolean;
-  middleware: Middleware[];
-  placement: Placement;
+  arrow?: boolean;
+  middleware?: Middleware[];
+  placement?: Placement;
 }
+
+type DeepRequired<T> = T extends (...args: unknown[]) => unknown ? T : T extends readonly unknown[] ? { [K in keyof T]: DeepRequired<NonNullable<T[K]>> } : T extends object ? { [K in keyof T]-?: DeepRequired<NonNullable<T[K]>> } : NonNullable<T>;
 
 export default class Menu {
   private static menus: Menu[] = [];
   private readonly rootElement: HTMLElement;
-  private readonly defaults: MenuOptions;
-  private readonly settings: MenuOptions;
+  private readonly defaults: DeepRequired<MenuOptions> = {
+    animation: { duration: 300 },
+    delay: 200,
+    popover: {
+      menu: {
+        arrow: true,
+        middleware: [flip(), offset(), shift()],
+        placement: 'bottom-start',
+      },
+      submenu: {
+        arrow: true,
+        middleware: [flip(), offset(), shift()],
+        placement: 'right-start',
+      },
+      transformOrigin: true,
+    },
+    selector: {
+      checkboxItem: '[role="menuitemcheckbox"]',
+      group: '[role="group"]',
+      item: '[role^="menuitem"]',
+      list: '[role="menu"]',
+      radioItem: '[role="menuitemradio"]',
+      trigger: '[data-menu-trigger]',
+    },
+  };
+  private readonly settings: DeepRequired<MenuOptions>;
   private readonly isSubmenu: boolean;
   private readonly triggerElement: HTMLElement | null;
   private readonly listElement: HTMLElement;
@@ -41,41 +67,16 @@ export default class Menu {
   private readonly radioItemElements: HTMLElement[] = [];
   private readonly radioItemElementsByGroup: Map<HTMLElement, HTMLElement[]> = new Map();
   private readonly arrowElement: HTMLElement | null;
-  private readonly controller = new AbortController();
+  private readonly eventController = new AbortController();
   private animation: Animation | null = null;
   private readonly submenus: Menu[] = [];
   private submenuTimer: ReturnType<typeof setTimeout> | undefined;
   private destroyed = false;
   private cleanupPopover: (() => void) | null = null;
 
-  constructor(root: HTMLElement, options: Partial<MenuOptions> = {}, submenu = false) {
+  constructor(root: HTMLElement, options: MenuOptions = {}, submenu = false) {
     if (!root) throw new Error('Root element missing');
     this.rootElement = root;
-    this.defaults = {
-      animation: { duration: 300 },
-      delay: 200,
-      popover: {
-        menu: {
-          arrow: true,
-          middleware: [flip(), offset(), shift()],
-          placement: 'bottom-start',
-        },
-        submenu: {
-          arrow: true,
-          middleware: [flip(), offset(), shift()],
-          placement: 'right-start',
-        },
-        transformOrigin: true,
-      },
-      selector: {
-        checkboxItem: '[role="menuitemcheckbox"]',
-        group: '[role="group"]',
-        item: '[role^="menuitem"]',
-        list: '[role="menu"]',
-        radioItem: '[role="menuitemradio"]',
-        trigger: '[data-menu-trigger]',
-      },
-    };
     this.settings = {
       ...this.defaults,
       ...options,
@@ -136,7 +137,7 @@ export default class Menu {
       this.arrowElement = document.createElement('div');
       this.arrowElement.setAttribute('data-menu-arrow', '');
       this.listElement.appendChild(this.arrowElement);
-      settings.middleware.push(arrowMiddleware({ element: this.arrowElement }));
+      settings.middleware.push(arrow({ element: this.arrowElement }));
     } else {
       this.arrowElement = null;
     }
@@ -154,7 +155,7 @@ export default class Menu {
   async destroy(force = false): Promise<void> {
     if (this.destroyed) return;
     this.destroyed = true;
-    this.controller.abort();
+    this.eventController.abort();
     this.clearSubmenuTimer();
     this.cleanupPopover?.();
     this.cleanupPopover = null;
@@ -171,7 +172,7 @@ export default class Menu {
   }
 
   private initialize(): void {
-    const { signal } = this.controller;
+    const { signal } = this.eventController;
     document.addEventListener('pointerdown', this.handleOutsidePointerDown, { signal });
     this.rootElement.addEventListener('focusin', this.handleRootFocusIn, { signal });
     this.rootElement.addEventListener('focusout', this.handleRootFocusOut, { signal });
@@ -438,9 +439,8 @@ export default class Menu {
         this.listElement.removeAttribute('data-menu-placement');
         this.listElement.style.setProperty('display', 'none');
         ['left', 'top', 'transform-origin'].forEach((prop) => this.listElement.style.removeProperty(prop));
-        const arrow = this.arrowElement;
-        if (arrow) {
-          ['left', 'rotate', 'top'].forEach((prop) => arrow.style.removeProperty(prop));
+        if (this.arrowElement) {
+          ['left', 'rotate', 'top'].forEach((prop) => this.arrowElement?.style.removeProperty(prop));
         }
       }
       this.listElement.style.removeProperty('opacity');
@@ -509,9 +509,9 @@ export default class Menu {
           this.listElement.style.setProperty('transform-origin', transformOriginByPlacement[placement]);
         }
         if (!this.arrowElement) return;
-        const arrow = middlewareData.arrow;
-        if (!arrow) return;
-        const { x: arrowX, y: arrowY } = arrow;
+        const data = middlewareData.arrow;
+        if (!data) return;
+        const { x: arrowX, y: arrowY } = data;
         this.arrowElement.style.setProperty('left', arrowX != null ? `${arrowX}px` : '');
         this.arrowElement.style.setProperty('top', arrowY != null ? `${arrowY - this.arrowElement.offsetHeight / 2}px` : '');
         const arrowStyleBySide: Record<string, { position: string; rotate: string }> = {
