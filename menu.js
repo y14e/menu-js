@@ -454,22 +454,11 @@ export default class Menu {
         this.listElement.style.setProperty('left', `${listX}px`);
         this.listElement.style.setProperty('top', `${listY}px`);
         this.listElement.setAttribute('data-menu-placement', placement);
-        const transformOriginByPlacement = {
-          top: '50% 100%',
-          'top-start': '0 100%',
-          'top-end': '100% 100%',
-          right: '0 50%',
-          'right-start': '0 0',
-          'right-end': '0 100%',
-          bottom: '50% 0',
-          'bottom-start': '0 0',
-          'bottom-end': '100% 0',
-          left: '100% 50%',
-          'left-start': '100% 0',
-          'left-end': '100% 100%',
-        };
         if (this.settings.popover.transformOrigin) {
-          this.listElement.style.setProperty('transform-origin', transformOriginByPlacement[placement]);
+          this.listElement.style.setProperty(
+            'transform-origin',
+            { top: '50% 100%', 'top-start': '0 100%', 'top-end': '100% 100%', right: '0 50%', 'right-start': '0 0', 'right-end': '0 100%', bottom: '50% 0', 'bottom-start': '0 0', 'bottom-end': '100% 0', left: '100% 50%', 'left-start': '100% 0', 'left-end': '100% 100%' }[placement],
+          );
         }
         if (!this.arrowElement) return;
         const data = middlewareData.arrow;
@@ -477,15 +466,9 @@ export default class Menu {
         const { x: arrowX, y: arrowY } = data;
         this.arrowElement.style.setProperty('left', arrowX != null ? `${arrowX}px` : '');
         this.arrowElement.style.setProperty('top', arrowY != null ? `${arrowY - this.arrowElement.offsetHeight / 2}px` : '');
-        const arrowStyleBySide = {
-          top: { position: 'bottom', rotate: '225deg' },
-          right: { position: 'left', rotate: '315deg' },
-          bottom: { position: 'top', rotate: '45deg' },
-          left: { position: 'right', rotate: '135deg' },
-        };
         const side = placement.split('-')[0];
         if (!side) return;
-        const style = arrowStyleBySide[side];
+        const style = { top: { position: 'bottom', rotate: '225deg' }, right: { position: 'left', rotate: '315deg' }, bottom: { position: 'top', rotate: '45deg' }, left: { position: 'right', rotate: '135deg' } }[side];
         if (!style) return;
         this.arrowElement.style.setProperty(style.position, `${this.arrowElement.offsetWidth / -2}px`);
         this.arrowElement.style.setProperty('rotate', style.rotate);
