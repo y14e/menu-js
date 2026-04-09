@@ -327,18 +327,7 @@ export default class Menu {
         break;
       default: {
         targetFocusables = this.itemElementsByFirstChar[key.toLowerCase()].filter(this.isFocusable);
-        const indexes = new Map<HTMLElement, number>();
-        for (let i = 0, l = focusables.length; i < l; i++) {
-          indexes.set(focusables[i], i);
-        }
-        let foundIndex = -1;
-        for (let i = 0, l = targetFocusables.length; i < l; i++) {
-          const index = indexes.get(targetFocusables[i]);
-          if (index !== undefined && index > currentIndex) {
-            foundIndex = i;
-            break;
-          }
-        }
+        const foundIndex = targetFocusables.findIndex((focusable) => focusables.indexOf(focusable) > currentIndex);
         newIndex = foundIndex !== -1 ? foundIndex : 0;
       }
     }
@@ -439,9 +428,13 @@ export default class Menu {
       if (!open) {
         this.listElement.removeAttribute('data-menu-placement');
         this.listElement.style.setProperty('display', 'none');
-        ['left', 'top', 'transform-origin'].forEach((prop) => this.listElement.style.removeProperty(prop));
+        this.listElement.style.removeProperty('left');
+        this.listElement.style.removeProperty('top');
+        this.listElement.style.removeProperty('transform-origin');
         if (this.arrowElement) {
-          ['left', 'rotate', 'top'].forEach((prop) => this.arrowElement?.style.removeProperty(prop));
+          this.arrowElement.style.removeProperty('left');
+          this.arrowElement.style.removeProperty('rotate');
+          this.arrowElement.style.removeProperty('top');
         }
       }
       this.listElement.style.removeProperty('opacity');
