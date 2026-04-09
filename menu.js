@@ -379,8 +379,7 @@ export default class Menu {
     }
     const opacity = getComputedStyle(this.listElement).getPropertyValue('opacity');
     this.animation?.cancel();
-    const { duration } = this.settings.animation;
-    this.animation = this.listElement.animate({ opacity: open ? [opacity, '1'] : [opacity, '0'] }, { duration, easing: 'ease' });
+    this.animation = this.listElement.animate({ opacity: open ? [opacity, '1'] : [opacity, '0'] }, { duration: this.settings.animation.duration, easing: 'ease' });
     const cleanupAnimation = () => {
       this.animation = null;
     };
