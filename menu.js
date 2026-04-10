@@ -63,7 +63,13 @@ export default class Menu {
     this.itemElementsByFirstChar = {};
     for (const item of this.itemElements) {
       const shortcuts = item.getAttribute('aria-keyshortcuts');
-      const keys = (shortcuts?.split(/\s+/) ?? [item.textContent.trim()[0]]).filter((key) => /^\S$/i.test(key)).map((key) => key.toLowerCase());
+      const keys = (shortcuts?.split(/\s+/) ?? [item.textContent.trim()[0]])
+        .filter((key) => {
+          return /^\S$/i.test(key);
+        })
+        .map((key) => {
+          return key.toLowerCase();
+        });
       for (const key of keys) {
         let items = this.itemElementsByFirstChar[key];
         if (!items) {
@@ -130,9 +136,15 @@ export default class Menu {
     this.eventController.abort();
     this.cleanupPopover?.();
     this.cleanupPopover = null;
-    Menu.menus = Menu.menus.filter((menu) => menu !== this);
+    Menu.menus = Menu.menus.filter((menu) => {
+      return menu !== this;
+    });
     this.rootElement.removeAttribute('data-menu-initialized');
-    await Promise.all(this.submenus.map((submenu) => submenu.destroy()));
+    await Promise.all(
+      this.submenus.map((submenu) => {
+        return submenu.destroy();
+      }),
+    );
     if (!this.animation) {
       return;
     }
@@ -174,7 +186,11 @@ export default class Menu {
       if (parent.querySelector(this.settings.selector.list)) {
         this.submenus.push(new Menu(parent, this.settings, true));
       }
-      if ([this.checkboxItemElements, this.radioItemElements].every((list) => !list.includes(item))) {
+      if (
+        [this.checkboxItemElements, this.radioItemElements].every((list) => {
+          return !list.includes(item);
+        })
+      ) {
         item.setAttribute('role', 'menuitem');
       }
       item.addEventListener('blur', this.handleItemBlur, { signal });
@@ -315,7 +331,9 @@ export default class Menu {
         break;
       default: {
         targetFocusables = this.itemElementsByFirstChar[key.toLowerCase()].filter(this.isFocusable);
-        const foundIndex = targetFocusables.findIndex((focusable) => focusables.indexOf(focusable) > currentIndex);
+        const foundIndex = targetFocusables.findIndex((focusable) => {
+          return focusables.indexOf(focusable) > currentIndex;
+        });
         newIndex = foundIndex !== -1 ? foundIndex : 0;
       }
     }
@@ -388,10 +406,14 @@ export default class Menu {
       return;
     }
     if (this.triggerElement) {
-      requestAnimationFrame(() => this.triggerElement?.setAttribute('aria-expanded', String(open)));
+      requestAnimationFrame(() => {
+        this.triggerElement?.setAttribute('aria-expanded', String(open));
+      });
     }
     if (open) {
-      for (const menu of Menu.menus.filter((m) => !m.rootElement.contains(this.rootElement))) {
+      for (const menu of Menu.menus.filter((m) => {
+        return !m.rootElement.contains(this.rootElement);
+      })) {
         menu.close();
       }
       this.listElement.style.setProperty('display', 'block');
