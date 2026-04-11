@@ -27,13 +27,13 @@ interface MenuPopoverOptions {
   placement?: Placement;
 }
 
-type DeepRequired<T> = T extends (...args: unknown[]) => unknown ? T : T extends readonly unknown[] ? { [K in keyof T]: DeepRequired<NonNullable<T[K]>> } : T extends object ? { [K in keyof T]-?: DeepRequired<NonNullable<T[K]>> } : NonNullable<T>;
+type DeepRequired<T> = T extends (...args: unknown[]) => unknown ? T : T extends readonly unknown[] ? T : T extends object ? { [K in keyof T]-?: DeepRequired<NonNullable<T[K]>> } : NonNullable<T>;
 
 export default class Menu {
   private static menus: Menu[] = [];
 
   private readonly rootElement: HTMLElement;
-  private readonly defaults: DeepRequired<MenuOptions> = {
+  private readonly defaults = {
     animation: { duration: 300 },
     delay: 200,
     popover: {
@@ -57,7 +57,7 @@ export default class Menu {
       radioItem: '[role="menuitemradio"]',
       trigger: '[data-menu-trigger]',
     },
-  };
+  } satisfies DeepRequired<MenuOptions>;
   private readonly settings: DeepRequired<MenuOptions>;
   private readonly isSubmenu: boolean;
   private readonly triggerElement: HTMLElement | null;
@@ -548,6 +548,9 @@ export default class Menu {
       return;
     }
     const compute = () => {
+      if (!this.triggerElement) {
+        return;
+      }
       computePosition(this.triggerElement, this.listElement, this.settings.popover[!this.isSubmenu ? 'menu' : 'submenu']).then(({ x: listX, y: listY, placement, middlewareData }: { x: number; y: number; placement: Placement; middlewareData: MiddlewareData }) => {
         this.listElement.style.setProperty('left', `${listX}px`);
         this.listElement.style.setProperty('top', `${listY}px`);
